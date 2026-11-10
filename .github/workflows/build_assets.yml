@@ -20,9 +20,8 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Pillow & SPIFFS Gen
-        run: |
-          pip install pillow spiffsgen
+      - name: Install Pillow
+        run: pip install pillow
 
       - name: Create EMO Frames
         run: |
@@ -106,7 +105,8 @@ jobs:
 
       - name: Build SPIFFS assets.bin
         run: |
-          spiffsgen 0x100000 data assets.bin
+          wget https://raw.githubusercontent.com/espressif/esp-idf/master/components/spiffs/spiffsgen.py
+          python spiffsgen.py 0x100000 data assets.bin
           ls -lh assets.bin
 
       - name: Upload Binary
