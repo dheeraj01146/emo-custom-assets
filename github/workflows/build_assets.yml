@@ -1,4 +1,4 @@
-name: Build EMO Assets Binary
+name: Auto Generate and Build EMO Assets
 
 on:
   push:
@@ -12,7 +12,76 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Download & Setup mklittlefs
+      - name: Setup Python & Pillow
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Pillow
+        run: pip install pillow
+
+      - name: Generate 21 Cyan EMO Frames Automatically
+        run: |
+          python - << 'EOF'
+          import os
+          from PIL import Image, ImageDraw
+
+          os.makedirs("data/emoji", exist_ok=True)
+          W, H = 320, 240
+          CYAN = (0, 240, 255)
+          BG = (0, 0, 0)
+
+          frames = [
+              ("neutral_0", 60, 80, 20, 0, 0),
+              ("neutral_1", 60, 82, 20, 0, 0),
+              ("neutral_2", 60, 80, 20, 0, 0),
+              ("neutral_3", 60, 78, 19, 0, 0),
+              ("blink_0",   62, 50, 16, 0, 0),
+              ("blink_1",   64, 22, 10, 0, 0),
+              ("blink_2",   65, 8,   4, 0, 0),
+              ("blink_3",   64, 40, 14, 0, 0),
+              ("listen_0",  60, 76, 20, -14, -8),
+              ("listen_1",  60, 76, 20, -18, -10),
+              ("listen_2",  60, 76, 20, 14, -8),
+              ("listen_3",  60, 76, 20, 18, -10),
+              ("think_0",   52, 62, 16, 0, -15),
+              ("think_1",   54, 60, 16, 5, -12),
+              ("think_2",   52, 62, 16, 0, -15),
+              ("think_3",   54, 60, 16, -5, -12),
+              ("wake_0",    65, 86, 22, 0, 0),
+              ("wake_1",    62, 82, 20, 0, 0),
+          ]
+
+          gap = 32
+          for name, ew, eh, r, ox, oy in frames:
+              img = Image.new("RGB", (W, H), BG)
+              draw = ImageDraw.Draw(img)
+              
+              cy = H // 2 + oy
+              lx = (W // 2) - (gap // 2) - ew + ox
+              rx = (W // 2) + (gap // 2) + ox
+              ty = cy - eh // 2
+              by = ty + eh
+              
+              draw.rounded_rectangle([lx, ty, lx + ew, by], radius=r, fill=CYAN)
+              draw.rounded_rectangle([rx, ty, rx + ew, by], radius=r, fill=CYAN)
+              img.save(f"data/emoji/{name}.png")
+
+          # Happy frames
+          for i, curve in enumerate([25, 30, 25]):
+              img = Image.new("RGB", (W, H), BG)
+              draw = ImageDraw.Draw(img)
+              ew, eh = 62, 55
+              ty = H // 2 - 15
+              lx = (W // 2) - (gap // 2) - ew
+              rx = (W // 2) + (gap // 2)
+              for x in [lx, rx]:
+                  draw.pieslice([x, ty, x + ew, ty + eh], 180, 360, fill=CYAN)
+              img.save(f"data/emoji/happy_{i}.png")
+          print("All 21 Cyan frames generated in data/emoji successfully!")
+          EOF
+
+      - name: Download mklittlefs Tool
         run: |
           wget https://github.com/earlephilhower/mklittlefs/releases/download/3.0.0/x86_64-linux-gnu-mklittlefs-3.0.0.tar.gz
           tar -xzf x86_64-linux-gnu-mklittlefs-3.0.0.tar.gz
