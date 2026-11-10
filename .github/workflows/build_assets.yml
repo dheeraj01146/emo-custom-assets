@@ -1,4 +1,4 @@
-name: Generate Expressive Cute EMO GIFs
+name: Generate Ultra Cute Expressive EMO GIFs
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
       - name: Install Pillow
         run: pip install pillow
 
-      - name: Generate Custom Cute EMO GIFs
+      - name: Generate Perfect EMO GIFs
         run: |
           python - << 'EOF'
           import os
@@ -33,40 +33,34 @@ jobs:
           W, H = 320, 320
           BG = (0, 0, 0)
           WHITE = (255, 255, 255)
-          RED = (255, 80, 100)
+          RED = (255, 50, 75)
           GAP = 46
           R = 46
+          PR = 11
 
           lx = W // 2 - GAP // 2 - R
           rx = W // 2 + GAP // 2 + R
           cy = H // 2 - 10
 
-          def draw_base_dots(draw, cx1, cy1, cx2, cy2, r=R, sc1=1.0, sc2=1.0):
-              h1 = max(int(r * sc1), 3)
-              h2 = max(int(r * sc2), 3)
-              draw.ellipse([cx1 - r, cy1 - h1, cx1 + r, cy1 + h1], fill=WHITE)
-              draw.ellipse([cx2 - r, cy2 - h2, cx2 + r, cy2 + h2], fill=WHITE)
+          def draw_eye(draw, cx, cy, r=R, ox=0, oy=0, sc=1.0, dot=True):
+              hy = max(int(r * sc), 3)
+              draw.ellipse([cx - r, cy - hy, cx + r, cy + hy], fill=WHITE)
+              if dot and sc > 0.35:
+                  pry = max(int(PR * sc), 3)
+                  draw.ellipse([cx + ox - PR, cy + oy - pry, cx + ox + PR, cy + oy + pry], fill=BG)
 
           def save_gif(name, frames, duration=150):
               frames[0].save(f"gifs/{name}.gif", save_all=True, append_images=frames[1:], duration=duration, loop=0)
 
-          # 1. NEUTRAL (Cute living face: idle blink -> eating burger -> sipping tea)
+          # 1. NEUTRAL (Natural living robot: blink + subtle breathing)
           f_neutral = []
-          # Normal with blink
-          for sc in [1.0, 1.0, 0.6, 0.1, 0.7, 1.0, 1.0]:
-              img = Image.new("RGB", (W, H), BG)
-              draw_base_dots(ImageDraw.Draw(img), lx, cy, rx, cy, sc1=sc, sc2=sc)
-              f_neutral.append(img)
-          # Eating burger animation
-          for bx in [245, 235, 240, 248]:
+          for sc in [1.0, 1.0, 0.8, 0.2, 0.6, 1.0, 1.0, 1.0]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy, rx, cy)
-              # Burger item
-              d.rounded_rectangle([W//2 - 24, bx, W//2 + 24, bx + 16], radius=8, fill=WHITE)
-              d.line([(W//2 - 22, bx + 8), (W//2 + 22, bx + 8)], fill=BG, width=3)
+              draw_eye(d, lx, cy, sc=sc)
+              draw_eye(d, rx, cy, sc=sc)
               f_neutral.append(img)
-          save_gif("neutral", f_neutral, 160)
+          save_gif("neutral", f_neutral, 180)
 
           # 2. HAPPY
           f_happy = []
@@ -76,230 +70,258 @@ jobs:
               for cx in [lx, rx]:
                   d.pieslice([cx - R, cy - R + dy, cx + R, cy + R + dy], 180, 360, fill=WHITE)
                   d.pieslice([cx - R, cy - R + 14 + dy, cx + R, cy + R + 14 + dy], 180, 360, fill=BG)
-              d.rounded_rectangle([W//2 - 22, 230 + dy, W//2 + 22, 246 + dy], radius=8, fill=WHITE)
+              d.rounded_rectangle([W//2 - 20, 230 + dy, W//2 + 20, 244 + dy], radius=7, fill=WHITE)
               f_happy.append(img)
           save_gif("happy", f_happy, 150)
 
           # 3. LAUGHING
           f_laugh = []
-          for h in [14, 26, 34, 22]:
+          for h in [14, 24, 32, 22]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               for cx in [lx, rx]:
                   d.pieslice([cx - R, cy - R - 6, cx + R, cy + R - 6], 180, 360, fill=WHITE)
                   d.pieslice([cx - R, cy - R + 12, cx + R, cy + R + 12], 180, 360, fill=BG)
-              d.pieslice([W//2 - 28, 215, W//2 + 28, 215 + h*2], 0, 180, fill=WHITE)
+              d.pieslice([W//2 - 26, 216, W//2 + 26, 216 + h*2], 0, 180, fill=WHITE)
               f_laugh.append(img)
           save_gif("laughing", f_laugh, 120)
 
-          # 4. FUNNY (Laughing mouth open + cute squint)
+          # 4. FUNNY (Wide giggling eyes + open funny laugh mouth)
           f_funny = []
-          for mw in [36, 48, 54, 42]:
+          for dy, mh in [(0, 14), (-4, 24), (-2, 28), (0, 18)]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy, rx, cy, sc1=0.75, sc2=0.75)
-              d.rounded_rectangle([W//2 - mw//2, 225, W//2 + mw//2, 248], radius=10, fill=WHITE)
-              d.rectangle([W//2 - mw//2 + 6, 232, W//2 + mw//2 - 6, 244], fill=BG)
+              draw_eye(d, lx, cy + dy, sc=0.8, oy=2)
+              draw_eye(d, rx, cy + dy, sc=0.8, oy=2)
+              d.pieslice([W//2 - 24, 220 + dy, W//2 + 24, 220 + dy + mh*2], 0, 180, fill=WHITE)
               f_funny.append(img)
           save_gif("funny", f_funny, 140)
 
-          # 5. SAD (Droopy eyes + blinking)
+          # 5. SAD
           f_sad = []
           for sc in [0.8, 0.8, 0.4, 0.1, 0.6, 0.8]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy + 12, rx, cy + 12, sc1=sc, sc2=sc)
-              d.arc([W//2 - 18, 235, W//2 + 18, 255], 180, 360, fill=WHITE, width=4)
+              draw_eye(d, lx, cy + 10, oy=10, sc=sc)
+              draw_eye(d, rx, cy + 10, oy=10, sc=sc)
+              d.arc([W//2 - 16, 235, W//2 + 16, 255], 180, 360, fill=WHITE, width=4)
               f_sad.append(img)
           save_gif("sad", f_sad, 180)
 
-          # 6. ANGRY
+          # 6. ANGRY (Eyes + Fire Flames shooting from sides)
           f_angry = []
-          for dy in [0, 2, 0]:
+          for fl in [0, 8, 14, 6]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy + dy, rx, cy + dy)
-              d.polygon([(0, 0), (W // 2, cy - 8 + dy), (0, cy - 8 + dy)], fill=BG)
-              d.polygon([(W, 0), (W // 2, cy - 8 + dy), (W, cy - 8 + dy)], fill=BG)
+              draw_eye(d, lx, cy, oy=4)
+              draw_eye(d, rx, cy, oy=4)
+              d.polygon([(0, 0), (W // 2, cy - 8), (0, cy - 8)], fill=BG)
+              d.polygon([(W, 0), (W // 2, cy - 8), (W, cy - 8)], fill=BG)
+              # Left Fire Flame
+              d.polygon([(40, cy), (15, cy - 25 - fl), (30, cy - 10), (10, cy - 40 - fl), (35, cy + 15)], fill=WHITE)
+              # Right Fire Flame
+              d.polygon([(280, cy), (305, cy - 25 - fl), (290, cy - 10), (310, cy - 40 - fl), (285, cy + 15)], fill=WHITE)
               f_angry.append(img)
-          save_gif("angry", f_angry, 170)
+          save_gif("angry", f_angry, 130)
 
-          # 7. CRYING (Droopy eyes with smooth tears)
+          # 7. CRYING
           f_crying = []
           for ty in [5, 20, 38, 56]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy + 10, rx, cy + 10, sc1=0.7, sc2=0.7)
-              d.ellipse([lx - 6, cy + 35 + ty, lx + 6, cy + 50 + ty], fill=WHITE)
-              d.ellipse([rx - 6, cy + 35 + ty, rx + 6, cy + 50 + ty], fill=WHITE)
+              draw_eye(d, lx, cy + 10, oy=8, sc=0.7)
+              draw_eye(d, rx, cy + 10, oy=8, sc=0.7)
+              d.ellipse([lx - 5, cy + 35 + ty, lx + 5, cy + 48 + ty], fill=WHITE)
+              d.ellipse([rx - 5, cy + 35 + ty, rx + 5, cy + 48 + ty], fill=WHITE)
               f_crying.append(img)
           save_gif("crying", f_crying, 130)
 
-          # 8. LOVING
+          # 8. LOVING (Eyes stable + Minecraft floating pixel hearts)
           f_loving = []
-          for rm in [0, 4, 8, 4]:
+          for hy in [0, 8, 16, 24, 32]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy, rx, cy, r=R + rm)
-              d.rounded_rectangle([W//2 - 16, 230, W//2 + 16, 244], radius=7, fill=WHITE)
+              draw_eye(d, lx, cy)
+              draw_eye(d, rx, cy)
+              # Minecraft Red Heart
+              hx, cur_y = W // 2, 90 - hy
+              d.rectangle([hx - 12, cur_y - 8, hx - 4, cur_y], fill=RED)
+              d.rectangle([hx + 4, cur_y - 8, hx + 12, cur_y], fill=RED)
+              d.rectangle([hx - 16, cur_y, hx + 16, cur_y + 8], fill=RED)
+              d.rectangle([hx - 12, cur_y + 8, hx + 12, cur_y + 14], fill=RED)
+              d.rectangle([hx - 6, cur_y + 14, hx + 6, cur_y + 20], fill=RED)
               f_loving.append(img)
-          save_gif("loving", f_loving, 160)
+          save_gif("loving", f_loving, 150)
 
           # 9. EMBARRASSED
           f_embarrassed = []
           for sc in [0.75, 0.7, 0.75]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy + 6, rx, cy + 6, sc1=sc, sc2=sc)
+              draw_eye(d, lx, cy + 6, oy=6, sc=sc)
+              draw_eye(d, rx, cy + 6, oy=6, sc=sc)
               d.ellipse([lx - 25, cy + 45, lx + 25, cy + 55], fill=WHITE)
               d.ellipse([rx - 25, cy + 45, rx + 25, cy + 55], fill=WHITE)
               f_embarrassed.append(img)
           save_gif("embarrassed", f_embarrassed, 200)
 
-          # 10. SURPRISED (Normal cute round eyes + Hands on mouth!)
+          # 10. SURPRISED (Eyes stay normal + Cute defined robotic paws on mouth)
           f_surprised = []
-          for hy in [245, 230, 220, 222]:
+          for py in [260, 240, 230, 232]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy - 6, rx, cy - 6) # Eyes stay cute & normal
-              # Cute open mouth
-              d.ellipse([W//2 - 14, 218, W//2 + 14, 246], fill=WHITE)
-              # Cute little hands coming up to cover mouth
-              d.ellipse([W//2 - 38, hy, W//2 - 8, hy + 28], fill=WHITE)
-              d.ellipse([W//2 + 8, hy, W//2 + 38, hy + 28], fill=WHITE)
+              draw_eye(d, lx, cy - 4)
+              draw_eye(d, rx, cy - 4)
+              # Open surprised mouth
+              d.ellipse([W//2 - 12, 218, W//2 + 12, 244], fill=WHITE)
+              # Left Paw / Hand
+              d.rounded_rectangle([W//2 - 42, py, W//2 - 10, py + 26], radius=12, fill=WHITE)
+              # Right Paw / Hand
+              d.rounded_rectangle([W//2 + 10, py, W//2 + 42, py + 26], radius=12, fill=WHITE)
               f_surprised.append(img)
-          save_gif("surprised", f_surprised, 150)
+          save_gif("surprised", f_surprised, 140)
 
           # 11. SHOCKED (Eye blink transition)
           f_shocked = []
           for sc in [1.0, 1.0, 0.6, 0.1, 0.7, 1.0, 1.05]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy - 10, rx, cy - 10, sc1=sc, sc2=sc)
-              d.ellipse([W//2 - 12, 230, W//2 + 12, 254], fill=WHITE)
+              draw_eye(d, lx, cy - 8, sc=sc)
+              draw_eye(d, rx, cy - 8, sc=sc)
+              d.ellipse([W//2 - 12, 228, W//2 + 12, 252], fill=WHITE)
               f_shocked.append(img)
           save_gif("shocked", f_shocked, 130)
 
-          # 12. THINKING (Looking up & right)
+          # 12. THINKING (Look up + Eye Blink)
           f_thinking = []
-          for ox, oy in [(14, -14), (18, -18), (14, -14)]:
-              img = Image.new("RGB", (W, H), BG)
-              draw_base_dots(ImageDraw.Draw(img), lx + ox, cy + oy, rx + ox, cy + oy)
-              f_thinking.append(img)
-          save_gif("thinking", f_thinking, 200)
-
-          # 13. WINKING (Smooth wink sequence: open -> closing -> closed -> opening)
-          f_wink = []
-          for sc in [1.0, 0.65, 0.25, 0.08, 0.1, 0.5, 0.9, 1.0]:
+          for sc in [1.0, 1.0, 0.6, 0.1, 0.7, 1.0]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy, rx, cy, sc1=1.0, sc2=sc)
-              d.arc([W//2 - 14, 230, W//2 + 14, 246], 0, 180, fill=WHITE, width=4)
-              f_wink.append(img)
-          save_gif("winking", f_wink, 100)
+              draw_eye(d, lx + 14, cy - 14, ox=6, oy=-6, sc=sc)
+              draw_eye(d, rx + 14, cy - 14, ox=6, oy=-6, sc=sc)
+              f_thinking.append(img)
+          save_gif("thinking", f_thinking, 160)
 
-          # 14. COOL (Confident clean squint)
+          # 13. WINKING (Smooth wink)
+          f_wink = []
+          for sc in [1.0, 0.6, 0.1, 0.1, 0.5, 0.9, 1.0]:
+              img = Image.new("RGB", (W, H), BG)
+              d = ImageDraw.Draw(img)
+              draw_eye(d, lx, cy)
+              draw_eye(d, rx, cy, sc=sc)
+              f_wink.append(img)
+          save_gif("winking", f_wink, 110)
+
+          # 14. COOL (Black Shades / Sunglasses)
           f_cool = []
           for dy in [0, -2, 0]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy + dy, rx, cy + dy, sc1=0.6, sc2=0.6)
-              d.line([(W//2 - 18, 235 + dy), (W//2 + 18, 235 + dy)], fill=WHITE, width=4)
+              # Left shade lens
+              d.rounded_rectangle([lx - R - 4, cy - 24 + dy, lx + R + 4, cy + 24 + dy], radius=8, fill=WHITE)
+              # Right shade lens
+              d.rounded_rectangle([rx - R - 4, cy - 24 + dy, rx + R + 4, cy + 24 + dy], radius=8, fill=WHITE)
+              # Bridge
+              d.rectangle([lx + R, cy - 12 + dy, rx - R, cy - 4 + dy], fill=WHITE)
+              d.line([(W//2 - 16, 235 + dy), (W//2 + 16, 235 + dy)], fill=WHITE, width=4)
               f_cool.append(img)
           save_gif("cool", f_cool, 180)
 
-          # 15. RELAXED (Mouth added + Cup steaming chai tea sip!)
+          # 15. RELAXED (Chai cup sip)
           f_relaxed = []
           for steam in [0, 1, 2, 3]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              # Relaxed happy eyes
               for cx in [lx, rx]:
                   d.pieslice([cx - R, cy - R + 14, cx + R, cy + R + 14], 0, 180, fill=WHITE)
                   d.pieslice([cx - R, cy - R, cx + R, cy + R], 0, 180, fill=BG)
-              # Cute sipping mouth
-              d.ellipse([W//2 - 8, 218, W//2 + 8, 230], fill=WHITE)
-              # Chai / Tea Cup
-              d.rounded_rectangle([W//2 - 20, 238, W//2 + 20, 268], radius=6, fill=WHITE)
-              d.arc([W//2 + 15, 244, W//2 + 28, 262], -90, 90, fill=WHITE, width=3)
-              # Steaming smoke waves
+              d.ellipse([W//2 - 7, 218, W//2 + 7, 228], fill=WHITE)
+              # Cup
+              d.rounded_rectangle([W//2 - 18, 238, W//2 + 18, 266], radius=6, fill=WHITE)
+              d.arc([W//2 + 14, 244, W//2 + 26, 260], -90, 90, fill=WHITE, width=3)
               sy = 232 - steam*2
-              d.line([(W//2 - 8, sy), (W//2 - 6, sy - 6)], fill=WHITE, width=2)
-              d.line([(W//2 + 8, sy), (W//2 + 10, sy - 6)], fill=WHITE, width=2)
+              d.line([(W//2 - 6, sy), (W//2 - 4, sy - 6)], fill=WHITE, width=2)
+              d.line([(W//2 + 6, sy), (W//2 + 8, sy - 6)], fill=WHITE, width=2)
               f_relaxed.append(img)
           save_gif("relaxed", f_relaxed, 200)
 
-          # 16. DELICIOUS (Tasty lick: Mouth opens + Pink Tongue/Jeebh bahar aati hai)
+          # 16. DELICIOUS (Tongue out)
           f_delicious = []
           for tw in [8, 16, 24, 28, 18]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              # Happy looking eyes
               for cx in [lx, rx]:
                   d.pieslice([cx - R, cy - R - 2, cx + R, cy + R - 2], 180, 360, fill=WHITE)
                   d.pieslice([cx - R, cy - R + 14, cx + R, cy + R + 14], 180, 360, fill=BG)
-              # Open mouth
-              d.rounded_rectangle([W//2 - 26, 222, W//2 + 26, 242], radius=10, fill=WHITE)
-              # Sticking out cute pink tongue
-              d.rounded_rectangle([W//2 - 10, 232, W//2 + 10, 232 + tw], radius=8, fill=RED)
+              d.rounded_rectangle([W//2 - 24, 222, W//2 + 24, 240], radius=8, fill=WHITE)
+              d.rounded_rectangle([W//2 - 9, 232, W//2 + 9, 232 + tw], radius=8, fill=RED)
               f_delicious.append(img)
           save_gif("delicious", f_delicious, 140)
 
-          # 17. KISSES (Cute eyes + Real pouting kissing mouth + Pop heart)
+          # 17. KISSES (Real pouting kiss + Pop heart)
           f_kisses = []
-          for pw, hy in [(16, 0), (12, -8), (8, -18), (14, -6)]:
+          for sc, hy in [(0.9, 0), (0.7, -6), (0.6, -14), (0.8, -4)]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy, rx, cy, sc1=0.75, sc2=0.75)
-              # Pouting kiss lips (oo shape)
-              d.ellipse([W//2 - pw//2, 225, W//2 + pw//2, 239], fill=WHITE)
-              # Floating heart
+              draw_eye(d, lx, cy, sc=sc)
+              draw_eye(d, rx, cy, sc=sc)
+              # Puckered lips
+              d.ellipse([W//2 - 9, 224, W//2 + 9, 240], fill=WHITE)
+              d.ellipse([W//2 - 4, 228, W//2 + 4, 236], fill=BG)
               if hy < 0:
-                  d.ellipse([W//2 + 30, 210 + hy, W//2 + 42, 222 + hy], fill=WHITE)
+                  d.ellipse([W//2 + 28, 205 + hy, W//2 + 40, 217 + hy], fill=RED)
               f_kisses.append(img)
           save_gif("kisses", f_kisses, 160)
 
-          # 18. CONFIDENT (Firm clean look)
+          # 18. CONFIDENT (Squint + Eye Blink)
           f_confident = []
-          for dy in [0, -3, 0]:
+          for sc in [0.75, 0.75, 0.35, 0.08, 0.5, 0.75]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy + dy, rx, cy + dy, sc1=0.8, sc2=0.8)
-              d.arc([W//2 - 16, 228 + dy, W//2 + 20, 244 + dy], 0, 160, fill=WHITE, width=4)
+              draw_eye(d, lx, cy, sc=sc)
+              draw_eye(d, rx, cy, sc=sc)
+              d.arc([W//2 - 16, 228, W//2 + 20, 244], 0, 160, fill=WHITE, width=4)
               f_confident.append(img)
-          save_gif("confident", f_confident, 180)
+          save_gif("confident", f_confident, 160)
 
-          # 19. SLEEPY (Smooth eyelid close -> sleep slit -> smooth open)
+          # 19. SLEEPY (Full open -> smooth close -> Zzz floating)
           f_sleepy = []
-          for sc in [0.75, 0.45, 0.2, 0.08, 0.08, 0.08, 0.2, 0.6]:
+          for sc, zy in [(1.0, 0), (0.7, 0), (0.35, 0), (0.08, 4), (0.08, 12), (0.08, 20)]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy + 8, rx, cy + 8, sc1=sc, sc2=sc)
+              draw_eye(d, lx, cy + 8, sc=sc)
+              draw_eye(d, rx, cy + 8, sc=sc)
+              if sc <= 0.08:
+                  # Floating Z z z
+                  d.text((rx + 20, cy - 20 - zy), "z", fill=WHITE)
+                  d.text((rx + 30, cy - 35 - zy), "Z", fill=WHITE)
               f_sleepy.append(img)
-          save_gif("sleepy", f_sleepy, 160)
+          save_gif("sleepy", f_sleepy, 180)
 
-          # 20. SILLY (Normal cute eyes, playful funny open mouth)
+          # 20. SILLY (Goofy tongue out, normal clean eyes)
           f_silly = []
-          for my in [0, 4, 8, 4]:
+          for ty in [6, 14, 18, 10]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy, rx, cy) # Clean normal eyes
-              # Playful silly mouth
-              d.rounded_rectangle([W//2 - 22, 225 + my, W//2 + 22, 245 + my], radius=9, fill=WHITE)
+              draw_eye(d, lx, cy)
+              draw_eye(d, rx, cy)
+              d.rounded_rectangle([W//2 - 16, 224, W//2 + 16, 238], radius=6, fill=WHITE)
+              d.rounded_rectangle([W//2 - 7, 232, W//2 + 7, 232 + ty], radius=6, fill=RED)
               f_silly.append(img)
           save_gif("silly", f_silly, 150)
 
-          # 21. CONFUSED / DOUBT (Eyes blink and gaze lower sadly)
-          f_doubt = []
-          for sc, dy in [(1.0, 0), (0.7, 4), (0.1, 8), (0.5, 12), (0.85, 14), (0.85, 14)]:
+          # 21. CONFUSED (Head Shake: Left to Right "No-No" Animation)
+          f_confused = []
+          for hx in [0, -18, -24, 0, 18, 24, 0]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_base_dots(d, lx, cy + dy, rx, cy + dy, sc1=sc, sc2=sc)
-              d.line([(W//2 - 16, 238 + dy), (W//2 + 16, 234 + dy)], fill=WHITE, width=4)
-              f_doubt.append(img)
-          save_gif("confused", f_doubt, 170)
+              draw_eye(d, lx + hx, cy, ox=-hx//3)
+              draw_eye(d, rx + hx, cy, ox=-hx//3)
+              d.line([(W//2 - 14 + hx, 235), (W//2 + 14 + hx, 235)], fill=WHITE, width=4)
+              f_confused.append(img)
+          save_gif("confused", f_confused, 130)
 
-          print("Generated customized cute expressive EMO GIFs!")
+          print("Generated all 21 updated cute EMO GIFs!")
           EOF
 
       - name: Commit GIFs To Repository
@@ -307,7 +329,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add gifs/
-          git commit -m "Add expressive cute EMO GIFs with hands, tea, tongue and smooth transitions" || echo "No changes"
+          git commit -m "Update GIFs with flames, glasses, minecraft hearts, headshake, and sleep Zzz" || echo "No changes"
           git push
 
       - name: Upload GIFs ZIP
