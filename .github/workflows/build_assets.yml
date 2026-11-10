@@ -20,8 +20,8 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Pillow
-        run: pip install pillow
+      - name: Install Pillow & LittleFS
+        run: pip install pillow littlefs-python
 
       - name: Create 21 Cyan EMO Frames
         run: |
@@ -87,15 +87,29 @@ jobs:
           git commit -m "Auto-generated 21 Cyan EMO frames" || echo "No changes"
           git push
 
-      - name: Download mklittlefs Tool
-        run: |
-          wget https://github.com/earlephilhower/mklittlefs/releases/download/3.0.0/x86_64-linux-gnu-mklittlefs-3.0.0.tar.gz
-          tar -xzf x86_64-linux-gnu-mklittlefs-3.0.0.tar.gz
-          chmod +x mklittlefs
-
       - name: Build assets.bin
         run: |
-          ./mklittlefs -c data -s 0x100000 -p 256 -b 4096 assets.bin
+          python - << 'EOF'
+          import os
+          from littlefs import LittleFS
+
+          # 1MB LittleFS flash partition configuration
+          fs = LittleFS(block_size=4096, block_count=256)
+          fs.format()
+          fs.mount()
+
+          fs.mkdir('/emoji')
+          for f in sorted(os.listdir('data/emoji')):
+              if f.endswith('.png'):
+                  with open(f'data/emoji/{f}', 'rb') as src:
+                      data = src.read()
+                  with fs.open(f'/emoji/{f}', 'wb') as dst:
+                      dst.write(data)
+
+          with open('assets.bin', 'wb') as out:
+              out.write(fs.context.buffer)
+          print("assets.bin generated successfully!")
+          EOF
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
