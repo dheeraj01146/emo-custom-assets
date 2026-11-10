@@ -1,4 +1,4 @@
-name: Generate Xiaozhi Official EMO GIFs
+name: Generate Cute Dot-Pupil EMO GIFs
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
       - name: Install Pillow
         run: pip install pillow
 
-      - name: Generate Exact 21 Xiaozhi GIFs
+      - name: Generate 21 Cute Round Eyes with Center Dot GIFs
         run: |
           python - << 'EOF'
           import os
@@ -33,256 +33,249 @@ jobs:
           W, H = 320, 320
           BG = (0, 0, 0)
           WHITE = (255, 255, 255)
-          GAP = 40
-          EYE_R = 45
+          GAP = 46
+          R = 48         # Outer white circle radius
+          PUPIL_R = 12   # Cute center black dot radius
 
-          def draw_round_eyes(draw, cy, radius, dot=True, dot_ox=0, dot_oy=0, blink_scale=1.0):
-              lx = W // 2 - GAP // 2 - radius
-              rx = W // 2 + GAP // 2 + radius
-              eh = int(radius * blink_scale)
+          def draw_eye_with_pupil(draw, cx, cy, r, pupil_ox=0, pupil_oy=0, scale_y=1.0):
+              hy = max(int(r * scale_y), 4)
+              # 1. White Outer Circle
+              draw.ellipse([cx - r, cy - hy, cx + r, cy + hy], fill=WHITE)
               
-              draw.ellipse([lx - radius, cy - eh, lx + radius, cy + eh], fill=WHITE)
-              draw.ellipse([rx - radius, cy - eh, rx + radius, cy + eh], fill=WHITE)
-
-              if dot and blink_scale > 0.35:
-                  dot_r = int(12 * blink_scale)
-                  draw.ellipse([lx + dot_ox - dot_r, cy + dot_oy - dot_r,
-                                lx + dot_ox + dot_r, cy + dot_oy + dot_r], fill=BG)
-                  draw.ellipse([rx + dot_ox - dot_r, cy + dot_oy - dot_r,
-                                rx + dot_ox + dot_r, cy + dot_oy + dot_r], fill=BG)
-
-          def draw_mouth(draw, open_h, width=64, cy=245):
-              if open_h <= 0: return
-              lx = W // 2 - width // 2
-              rx = W // 2 + width // 2
-              draw.rounded_rectangle([lx, cy - open_h // 2, rx, cy + open_h // 2], radius=open_h // 2, fill=WHITE)
+              # 2. Center Black Dot (Pupil)
+              if scale_y > 0.35:
+                  pr_y = max(int(PUPIL_R * scale_y), 3)
+                  px = cx + pupil_ox
+                  py = cy + pupil_oy
+                  draw.ellipse([px - PUPIL_R, py - pr_y, px + PUPIL_R, py + pr_y], fill=BG)
 
           def save_gif(name, frames, duration=150):
               frames[0].save(f"gifs/{name}.gif", save_all=True, append_images=frames[1:], duration=duration, loop=0)
 
-          # 1. Neutral (Idle / Breathing)
-          f_neutral = []
-          for dr in [0, 2, 0, -2]:
-              img = Image.new("RGB", (W, H), BG)
-              draw_round_eyes(ImageDraw.Draw(img), H // 2 - 15, EYE_R + dr)
-              f_neutral.append(img)
-          save_gif("neutral", f_neutral, 220)
+          lx = W // 2 - GAP // 2 - R
+          rx = W // 2 + GAP // 2 + R
+          cy = H // 2
 
-          # 2. Happy (Curved happy eyes + mouth)
-          f_happy = []
-          for mh in [8, 22, 14]:
+          # 1. Neutral (Idle breathing with center dots)
+          f_neutral = []
+          for dy in [0, -2, -4, -2, 0, 2]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              lx = W // 2 - GAP // 2 - EYE_R
-              rx = W // 2 + GAP // 2 + EYE_R
+              draw_eye_with_pupil(d, lx, cy + dy, R)
+              draw_eye_with_pupil(d, rx, cy + dy, R)
+              f_neutral.append(img)
+          save_gif("neutral", f_neutral, 180)
+
+          # 2. Happy (Cute crescent arcs)
+          f_happy = []
+          for dy in [0, -4, 0]:
+              img = Image.new("RGB", (W, H), BG)
+              d = ImageDraw.Draw(img)
               for cx in [lx, rx]:
-                  d.pieslice([cx - EYE_R, H // 2 - 55, cx + EYE_R, H // 2 + 25], 180, 360, fill=WHITE)
-              draw_mouth(d, open_h=mh, width=60, cy=235)
+                  d.pieslice([cx - R, cy - R + dy, cx + R, cy + R + dy], 180, 360, fill=WHITE)
+                  d.pieslice([cx - R, cy - R + 14 + dy, cx + R, cy + R + 14 + dy], 180, 360, fill=BG)
               f_happy.append(img)
-          save_gif("happy", f_happy, 160)
+          save_gif("happy", f_happy, 170)
 
           # 3. Laughing
-          f_laughing = []
-          for mh in [16, 32, 22]:
+          f_laugh = []
+          for dy in [-2, -8, -2]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              lx = W // 2 - GAP // 2 - EYE_R
-              rx = W // 2 + GAP // 2 + EYE_R
               for cx in [lx, rx]:
-                  d.pieslice([cx - EYE_R, H // 2 - 50, cx + EYE_R, H // 2 + 20], 180, 360, fill=WHITE)
-              draw_mouth(d, open_h=mh, width=72, cy=235)
-              f_laughing.append(img)
-          save_gif("laughing", f_laughing, 120)
+                  d.pieslice([cx - R - 4, cy - R + dy, cx + R + 4, cy + R + dy], 180, 360, fill=WHITE)
+                  d.pieslice([cx - R - 4, cy - R + 20 + dy, cx + R + 4, cy + R + 20 + dy], 180, 360, fill=BG)
+              f_laugh.append(img)
+          save_gif("laughing", f_laugh, 120)
 
-          # 4. Funny
+          # 4. Funny (Center dots wiggling around playfully)
           f_funny = []
-          for i, ox in enumerate([8, -8, 8]):
+          for ox, oy in [(0, 0), (-14, -8), (14, -8), (-10, 10), (10, 10)]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_round_eyes(d, H // 2 - 15, EYE_R, dot_ox=ox)
-              draw_mouth(d, open_h=18, width=54, cy=240)
+              draw_eye_with_pupil(d, lx, cy, R, pupil_ox=ox, pupil_oy=oy)
+              draw_eye_with_pupil(d, rx, cy, R, pupil_ox=-ox, pupil_oy=-oy)
               f_funny.append(img)
-          save_gif("funny", f_funny, 150)
+          save_gif("funny", f_funny, 140)
 
-          # 5. Sad
+          # 5. Sad (Dots looking down sadly)
           f_sad = []
-          for dy in [0, 4, 2]:
+          for dy in [10, 14, 10]:
               img = Image.new("RGB", (W, H), BG)
-              draw_round_eyes(ImageDraw.Draw(img), H // 2 + dy, EYE_R - 4, dot_oy=14)
+              d = ImageDraw.Draw(img)
+              draw_eye_with_pupil(d, lx, cy + dy, R - 4, pupil_oy=10, scale_y=0.85)
+              draw_eye_with_pupil(d, rx, cy + dy, R - 4, pupil_oy=10, scale_y=0.85)
               f_sad.append(img)
           save_gif("sad", f_sad, 220)
 
-          # 6. Angry
+          # 6. Angry (Cut angled brows + sharp center pupils)
           f_angry = []
-          for _ in range(3):
+          for dy in [0, 2, 0]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_round_eyes(d, H // 2 - 10, EYE_R, dot_oy=4)
-              d.polygon([(0, 0), (W // 2, 115), (0, 115)], fill=BG)
-              d.polygon([(W, 0), (W // 2, 115), (W, 115)], fill=BG)
+              draw_eye_with_pupil(d, lx, cy + dy, R, pupil_oy=4)
+              draw_eye_with_pupil(d, rx, cy + dy, R, pupil_oy=4)
+              d.polygon([(0, 0), (W // 2, cy - 8 + dy), (0, cy - 8 + dy)], fill=BG)
+              d.polygon([(W, 0), (W // 2, cy - 8 + dy), (W, cy - 8 + dy)], fill=BG)
               f_angry.append(img)
-          save_gif("angry", f_angry, 180)
+          save_gif("angry", f_angry, 170)
 
-          # 7. Crying
+          # 7. Crying (Looking down + tear drops)
           f_crying = []
-          for sc in [0.9, 0.85, 0.9]:
+          for ty in [10, 25, 45, 65]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_round_eyes(d, H // 2 + 5, int(EYE_R * sc), dot_oy=10)
-              # Tear lines
-              d.line([(W//2 - 60, 200), (W//2 - 60, 250)], fill=WHITE, width=4)
-              d.line([(W//2 + 60, 200), (W//2 + 60, 250)], fill=WHITE, width=4)
+              draw_eye_with_pupil(d, lx, cy + 8, R - 4, pupil_oy=8, scale_y=0.8)
+              draw_eye_with_pupil(d, rx, cy + 8, R - 4, pupil_oy=8, scale_y=0.8)
+              d.ellipse([lx - 8, cy + 40 + ty, lx + 8, cy + 56 + ty], fill=WHITE)
+              d.ellipse([rx - 8, cy + 40 + ty, rx + 8, cy + 56 + ty], fill=WHITE)
               f_crying.append(img)
-          save_gif("crying", f_crying, 160)
+          save_gif("crying", f_crying, 130)
 
-          # 8. Loving (Heart eyes)
+          # 8. Loving (Big sparkling eyes with center dots)
           f_loving = []
-          for s in [1.0, 1.15, 1.0]:
+          for r_mod in [0, 4, 8, 4]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_round_eyes(d, H // 2 - 15, int(EYE_R * s))
-              draw_mouth(d, open_h=12, width=48, cy=240)
+              draw_eye_with_pupil(d, lx, cy, R + r_mod, pupil_ox=2, pupil_oy=2)
+              draw_eye_with_pupil(d, rx, cy, R + r_mod, pupil_ox=-2, pupil_oy=2)
               f_loving.append(img)
-          save_gif("loving", f_loving, 180)
+          save_gif("loving", f_loving, 150)
 
-          # 9. Embarrassed
+          # 9. Embarrassed (Looking slightly down + blushes)
           f_embarrassed = []
-          for oy in [6, 10, 6]:
+          for sc in [0.8, 0.75, 0.8]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_round_eyes(d, H // 2, EYE_R - 4, dot_oy=oy)
-              # Blushing dots under eyes
-              d.ellipse([70, 215, 95, 230], fill=WHITE)
-              d.ellipse([225, 215, 250, 230], fill=WHITE)
+              draw_eye_with_pupil(d, lx, cy + 6, R, pupil_oy=6, scale_y=sc)
+              draw_eye_with_pupil(d, rx, cy + 6, R, pupil_oy=6, scale_y=sc)
+              d.ellipse([lx - 25, cy + 45, lx + 25, cy + 55], fill=WHITE)
+              d.ellipse([rx - 25, cy + 45, rx + 25, cy + 55], fill=WHITE)
               f_embarrassed.append(img)
           save_gif("embarrassed", f_embarrassed, 200)
 
-          # 10. Surprised
+          # 10. Surprised (Bigger eyes + smaller center dot for stunned look)
           f_surprised = []
-          for s in [1.15, 1.25, 1.15]:
+          for r_mod in [6, 12, 6]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_round_eyes(d, H // 2 - 20, int(EYE_R * s))
-              draw_mouth(d, open_h=34, width=34, cy=245)
+              draw_eye_with_pupil(d, lx, cy - 8, R + r_mod)
+              draw_eye_with_pupil(d, rx, cy - 8, R + r_mod)
               f_surprised.append(img)
-          save_gif("surprised", f_surprised, 150)
+          save_gif("surprised", f_surprised, 140)
 
           # 11. Shocked
           f_shocked = []
           for _ in range(3):
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_round_eyes(d, H // 2 - 25, EYE_R + 10, dot_oy=-4)
-              draw_mouth(d, open_h=44, width=44, cy=245)
+              draw_eye_with_pupil(d, lx, cy - 14, R + 14)
+              draw_eye_with_pupil(d, rx, cy - 14, R + 14)
               f_shocked.append(img)
-          save_gif("shocked", f_shocked, 140)
+          save_gif("shocked", f_shocked, 130)
 
-          # 12. Thinking (Looking up)
+          # 12. Thinking (Both black dots looking up-right together)
           f_thinking = []
-          for oy in [-12, -18, -12]:
+          for ox, oy in [(14, -16), (20, -20), (14, -16)]:
               img = Image.new("RGB", (W, H), BG)
-              draw_round_eyes(ImageDraw.Draw(img), H // 2 - 15, EYE_R - 2, dot_oy=oy)
+              d = ImageDraw.Draw(img)
+              draw_eye_with_pupil(d, lx, cy, R, pupil_ox=ox, pupil_oy=oy)
+              draw_eye_with_pupil(d, rx, cy, R, pupil_ox=ox, pupil_oy=oy)
               f_thinking.append(img)
           save_gif("thinking", f_thinking, 200)
 
-          # 13. Winking
-          f_winking = []
-          for _ in range(3):
+          # 13. Winking (Left open with dot, right cute line)
+          f_wink = []
+          for i in range(4):
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              lx = W // 2 - GAP // 2 - EYE_R
-              rx = W // 2 + GAP // 2 + EYE_R
-              cy = H // 2 - 15
-              d.ellipse([lx - EYE_R, cy - EYE_R, lx + EYE_R, cy + EYE_R], fill=WHITE)
-              d.ellipse([lx - 12, cy - 12, lx + 12, cy + 12], fill=BG)
-              d.ellipse([rx - EYE_R, cy - 4, rx + EYE_R, cy + 4], fill=WHITE)
-              f_winking.append(img)
-          save_gif("winking", f_winking, 220)
+              draw_eye_with_pupil(d, lx, cy, R)
+              d.rounded_rectangle([rx - R, cy - 5, rx + R, cy + 5], radius=5, fill=WHITE)
+              f_wink.append(img)
+          save_gif("winking", f_wink, 200)
 
-          # 14. Cool
+          # 14. Cool (Squint with pupils)
           f_cool = []
           for _ in range(3):
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              # Sunglasses cut look
-              draw_round_eyes(d, H // 2 - 10, EYE_R)
-              d.rectangle([40, 110, 280, 145], fill=BG)
-              draw_mouth(d, open_h=8, width=50, cy=240)
+              draw_eye_with_pupil(d, lx, cy, R, scale_y=0.65)
+              draw_eye_with_pupil(d, rx, cy, R, scale_y=0.65)
               f_cool.append(img)
-          save_gif("cool", f_cool, 200)
+          save_gif("cool", f_cool, 180)
 
-          # 15. Relaxed
+          # 15. Relaxed (Cute closed arcs)
           f_relaxed = []
-          for sc in [0.4, 0.45, 0.4]:
-              img = Image.new("RGB", (W, H), BG)
-              draw_round_eyes(ImageDraw.Draw(img), H // 2, EYE_R, dot=False, blink_scale=sc)
-              f_relaxed.append(img)
-          save_gif("relaxed", f_relaxed, 250)
-
-          # 16. Delicious
-          f_delicious = []
-          for mh in [10, 18, 12]:
+          for dy in [0, 2, 0]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_round_eyes(d, H // 2 - 15, EYE_R)
-              draw_mouth(d, open_h=mh, width=46, cy=235)
+              for cx in [lx, rx]:
+                  d.pieslice([cx - R, cy - R + 15 + dy, cx + R, cy + R + 15 + dy], 0, 180, fill=WHITE)
+                  d.pieslice([cx - R, cy - R + dy, cx + R, cy + R + dy], 0, 180, fill=BG)
+              f_relaxed.append(img)
+          save_gif("relaxed", f_relaxed, 220)
+
+          # 16. Delicious (Pupils looking playfully side to side)
+          f_delicious = []
+          for ox in [-10, 10, -10]:
+              img = Image.new("RGB", (W, H), BG)
+              d = ImageDraw.Draw(img)
+              draw_eye_with_pupil(d, lx, cy, R, pupil_ox=ox)
+              draw_eye_with_pupil(d, rx, cy, R, pupil_ox=ox)
               f_delicious.append(img)
           save_gif("delicious", f_delicious, 160)
 
-          # 17. Kisses
+          # 17. Kisses (Gentle squeeze blink)
           f_kisses = []
-          for _ in range(3):
+          for sc in [0.4, 0.3, 0.4]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_round_eyes(d, H // 2 - 15, EYE_R, blink_scale=0.35, dot=False)
-              draw_mouth(d, open_h=14, width=16, cy=235)
+              draw_eye_with_pupil(d, lx, cy, R, scale_y=sc)
+              draw_eye_with_pupil(d, rx, cy, R, scale_y=sc)
               f_kisses.append(img)
-          save_gif("kisses", f_kisses, 180)
+          save_gif("kisses", f_kisses, 170)
 
-          # 18. Confident
+          # 18. Confident (Halka squint with centered pupils)
           f_confident = []
-          for _ in range(3):
+          for dy in [0, -4, 0]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_round_eyes(d, H // 2 - 12, EYE_R, blink_scale=0.8)
-              draw_mouth(d, open_h=10, width=52, cy=235)
+              draw_eye_with_pupil(d, lx, cy + dy, R, scale_y=0.85)
+              draw_eye_with_pupil(d, rx, cy + dy, R, scale_y=0.85)
               f_confident.append(img)
           save_gif("confident", f_confident, 180)
 
-          # 19. Sleepy
+          # 19. Sleepy (Gentle slit lines)
           f_sleepy = []
-          for sc in [0.1, 0.15, 0.1]:
-              img = Image.new("RGB", (W, H), BG)
-              draw_round_eyes(ImageDraw.Draw(img), H // 2 + 10, EYE_R, dot=False, blink_scale=sc)
-              f_sleepy.append(img)
-          save_gif("sleepy", f_sleepy, 300)
-
-          # 20. Silly
-          f_silly = []
-          for ox in [-14, 14, -14]:
+          for sc in [0.08, 0.12, 0.08]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_round_eyes(d, H // 2 - 15, EYE_R, dot_ox=ox)
-              draw_mouth(d, open_h=16, width=40, cy=240)
+              d.rounded_rectangle([lx - R, cy + 10 - 4, lx + R, cy + 10 + 4], radius=4, fill=WHITE)
+              d.rounded_rectangle([rx - R, cy + 10 - 4, rx + R, cy + 10 + 4], radius=4, fill=WHITE)
+              f_sleepy.append(img)
+          save_gif("sleepy", f_sleepy, 250)
+
+          # 20. Silly (One dot looking left, other looking right - cross eyed)
+          f_silly = []
+          for dy in [4, -4]:
+              img = Image.new("RGB", (W, H), BG)
+              d = ImageDraw.Draw(img)
+              draw_eye_with_pupil(d, lx, cy - dy, R, pupil_ox=16)
+              draw_eye_with_pupil(d, rx, cy + dy, R, pupil_ox=-16)
               f_silly.append(img)
           save_gif("silly", f_silly, 160)
 
-          # 21. Confused
+          # 21. Confused (One eye tilted up, one down)
           f_confused = []
           for _ in range(3):
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              lx = W // 2 - GAP // 2 - EYE_R
-              rx = W // 2 + GAP // 2 + EYE_R
-              # One big eye, one smaller squinting eye
-              d.ellipse([lx - EYE_R, H//2 - 15 - EYE_R, lx + EYE_R, H//2 - 15 + EYE_R], fill=WHITE)
-              d.ellipse([lx - 12, H//2 - 27, lx + 12, H//2 - 3], fill=BG)
-              d.ellipse([rx - (EYE_R-12), H//2 - 10 - (EYE_R-12), rx + (EYE_R-12), H//2 - 10 + (EYE_R-12)], fill=WHITE)
-              d.ellipse([rx - 8, H//2 - 18, rx + 8, H//2 - 2], fill=BG)
+              draw_eye_with_pupil(d, lx, cy - 8, R + 4, pupil_oy=-6)
+              draw_eye_with_pupil(d, rx, cy + 8, R - 6, pupil_oy=6)
               f_confused.append(img)
-          save_gif("confused", f_confused, 200)
+          save_gif("confused", f_confused, 190)
 
-          print("Generated all 21 exact Xiaozhi named GIFs successfully!")
+          print("Generated 21 cute round eyes with center black dot pupils!")
           EOF
 
       - name: Commit GIFs To Repository
@@ -290,11 +283,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add gifs/
-          git commit -m "Generated exact 21 Xiaozhi GIFs (White Round Eyes + Center Pupils)" || echo "No changes"
+          git commit -m "Add center black dot pupils to cute round white eyes" || echo "No changes"
           git push
 
       - name: Upload GIFs ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: xiaozhi-21-emojis
+          name: cute-dot-pupil-emojis
           path: gifs/
