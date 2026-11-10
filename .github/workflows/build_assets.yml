@@ -1,4 +1,4 @@
-name: Generate Images and Build Assets
+name: Generate EMO GIFs for Xiaozhi
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  generate_gifs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -23,97 +23,152 @@ jobs:
       - name: Install Pillow
         run: pip install pillow
 
-      - name: Create EMO Frames
+      - name: Generate All Expression GIFs
         run: |
           python - << 'EOF'
           import os
           from PIL import Image, ImageDraw
 
-          os.makedirs("data/emoji", exist_ok=True)
-          W, H = 320, 240
+          os.makedirs("gifs", exist_ok=True)
+          W, H = 240, 240   # Square display standard for Xiaozhi GIF assets
           CYAN = (0, 240, 255)
           BG = (0, 0, 0)
-          GAP = 36
+          GAP = 28
 
-          def draw_eye_with_dot(draw, lx, rx, ty, ew, eh, r):
+          def draw_eye(draw, lx, rx, cy, ew, eh, r=16, dot=True, dot_ox=0, dot_oy=0):
+              ty = cy - eh // 2
               draw.rounded_rectangle([lx, ty, lx + ew, ty + eh], radius=r, fill=CYAN)
               draw.rounded_rectangle([rx, ty, rx + ew, ty + eh], radius=r, fill=CYAN)
-              dot_r = 7
-              lc = (lx + ew // 2, ty + eh // 2)
-              rc = (rx + ew // 2, ty + eh // 2)
-              draw.ellipse([lc[0] - dot_r, lc[1] - dot_r, lc[0] + dot_r, lc[1] + dot_r], fill=BG)
-              draw.ellipse([rc[0] - dot_r, rc[1] - dot_r, rc[0] + dot_r, rc[1] + dot_r], fill=BG)
+              if dot and eh > 15:
+                  dot_r = 6
+                  lc = (lx + ew // 2 + dot_ox, cy + dot_oy)
+                  rc = (rx + ew // 2 + dot_ox, cy + dot_oy)
+                  draw.ellipse([lc[0] - dot_r, lc[1] - dot_r, lc[0] + dot_r, lc[1] + dot_r], fill=BG)
+                  draw.ellipse([rc[0] - dot_r, rc[1] - dot_r, rc[0] + dot_r, rc[1] + dot_r], fill=BG)
 
-          def draw_mouth(draw, open_h, width=54):
-              m_cy = 188
-              m_lx = W // 2 - width // 2
-              m_rx = W // 2 + width // 2
-              draw.rounded_rectangle([m_lx, m_cy - open_h // 2, m_rx, m_cy + open_h // 2], radius=open_h // 2, fill=CYAN)
+          def draw_mouth(draw, open_h, width=46, cy=180):
+              if open_h <= 0: return
+              lx = W // 2 - width // 2
+              rx = W // 2 + width // 2
+              draw.rounded_rectangle([lx, cy - open_h // 2, rx, cy + open_h // 2], radius=open_h // 2, fill=CYAN)
 
-          base_frames = [
-              ("neutral_0", 58, 76, 18, 0, -12),
-              ("neutral_1", 58, 78, 18, 0, -12),
-              ("neutral_2", 58, 76, 18, 0, -12),
-              ("neutral_3", 58, 74, 18, 0, -12),
-              ("listen_0",  58, 74, 18, -14, -18),
-              ("listen_1",  58, 74, 18, -18, -20),
-              ("listen_2",  58, 74, 18, 14, -18),
-              ("listen_3",  58, 74, 18, 18, -20),
-              ("think_0",   50, 60, 16, 0, -22),
-              ("think_1",   52, 58, 16, 6, -20),
-              ("think_2",   50, 60, 16, 0, -22),
-              ("think_3",   52, 58, 16, -6, -20),
-          ]
+          # Helper to save GIF
+          def save_gif(name, frames, duration=150):
+              frames[0].save(f"gifs/{name}.gif", save_all=True, append_images=frames[1:], duration=duration, loop=0)
 
-          for name, ew, eh, r, ox, oy in base_frames:
+          # 1. Neutral (Idle breathing)
+          f_neutral = []
+          for eh in [66, 68, 66, 64]:
               img = Image.new("RGB", (W, H), BG)
-              draw = ImageDraw.Draw(img)
-              cy = H // 2 + oy
-              lx = (W // 2) - (GAP // 2) - ew + ox
-              rx = (W // 2) + (GAP // 2) + ox
-              draw_eye_with_dot(draw, lx, rx, cy - eh // 2, ew, eh, r)
-              img.save(f"data/emoji/{name}.png")
+              d = ImageDraw.Draw(img)
+              ew = 50
+              lx = W // 2 - GAP // 2 - ew
+              rx = W // 2 + GAP // 2
+              draw_eye(d, lx, rx, H // 2 - 10, ew, eh)
+              f_neutral.append(img)
+          save_gif("neutral", f_neutral, 200)
 
-          blink_frames = [
-              ("blink_0", 60, 48, 14),
-              ("blink_1", 62, 20, 8),
-              ("blink_2", 64, 8,  4),
-              ("blink_3", 62, 38, 12),
-          ]
-          for name, ew, eh, r in blink_frames:
+          # 2. Blink
+          f_blink = []
+          for eh in [66, 40, 14, 4, 30, 66]:
               img = Image.new("RGB", (W, H), BG)
-              draw = ImageDraw.Draw(img)
-              cy = H // 2 - 12
-              lx = (W // 2) - (GAP // 2) - ew
-              rx = (W // 2) + (GAP // 2)
-              draw.rounded_rectangle([lx, cy - eh // 2, lx + ew, cy + eh // 2], radius=r, fill=CYAN)
-              draw.rounded_rectangle([rx, cy - eh // 2, rx + ew, cy + eh // 2], radius=r, fill=CYAN)
-              img.save(f"data/emoji/{name}.png")
+              d = ImageDraw.Draw(img)
+              ew = 50
+              lx = W // 2 - GAP // 2 - ew
+              rx = W // 2 + GAP // 2
+              draw_eye(d, lx, rx, H // 2 - 10, ew, eh, dot=(eh > 20))
+              f_blink.append(img)
+          save_gif("blink", f_blink, 80)
 
-          talk_mouth_heights = [6, 16, 26, 14, 8]
-          for i, mh in enumerate(talk_mouth_heights):
+          # 3. Speaking / Talking (Eyes + Animated Mouth)
+          f_speak = []
+          for mh in [6, 16, 24, 18, 10, 4]:
               img = Image.new("RGB", (W, H), BG)
-              draw = ImageDraw.Draw(img)
-              cy = H // 2 - 20
-              ew, eh, r = 58, 76, 18
-              lx = (W // 2) - (GAP // 2) - ew
-              rx = (W // 2) + (GAP // 2)
-              draw_eye_with_dot(draw, lx, rx, cy - eh // 2, ew, eh, r)
-              draw_mouth(draw, open_h=mh, width=56)
-              img.save(f"data/emoji/happy_{i}.png") if i < 3 else img.save(f"data/emoji/wake_{i-3}.png")
+              d = ImageDraw.Draw(img)
+              ew, eh = 50, 64
+              lx = W // 2 - GAP // 2 - ew
+              rx = W // 2 + GAP // 2
+              draw_eye(d, lx, rx, H // 2 - 18, ew, eh)
+              draw_mouth(d, open_h=mh, width=50, cy=176)
+              f_speak.append(img)
+          save_gif("speak", f_speak, 120)
+
+          # 4. Happy
+          f_happy = []
+          for i, mh in enumerate([8, 18, 12]):
+              img = Image.new("RGB", (W, H), BG)
+              d = ImageDraw.Draw(img)
+              ew, eh = 50, 52
+              lx = W // 2 - GAP // 2 - ew
+              rx = W // 2 + GAP // 2
+              # Curved upper eyes
+              for x in [lx, rx]:
+                  d.pieslice([x, H // 2 - 40, x + ew, H // 2 + 10], 180, 360, fill=CYAN)
+              draw_mouth(d, open_h=mh, width=42, cy=168)
+              f_happy.append(img)
+          save_gif("happy", f_happy, 160)
+
+          # 5. Sad
+          f_sad = []
+          for dy in [0, 2, 4, 2]:
+              img = Image.new("RGB", (W, H), BG)
+              d = ImageDraw.Draw(img)
+              ew, eh = 48, 54
+              lx = W // 2 - GAP // 2 - ew
+              rx = W // 2 + GAP // 2
+              draw_eye(d, lx, rx, H // 2 + 6 + dy, ew, eh, dot_oy=8)
+              f_sad.append(img)
+          save_gif("sad", f_sad, 220)
+
+          # 6. Listen (Looking side dhyan se)
+          f_listen = []
+          for ox in [-12, -16, -12, 0, 12, 16, 12, 0]:
+              img = Image.new("RGB", (W, H), BG)
+              d = ImageDraw.Draw(img)
+              ew, eh = 50, 64
+              lx = W // 2 - GAP // 2 - ew + ox
+              rx = W // 2 + GAP // 2 + ox
+              draw_eye(d, lx, rx, H // 2 - 10, ew, eh, dot_ox=ox//3)
+              f_listen.append(img)
+          save_gif("listen", f_listen, 140)
+
+          # 7. Think (Looking up)
+          f_think = []
+          for oy in [-12, -16, -12]:
+              img = Image.new("RGB", (W, H), BG)
+              d = ImageDraw.Draw(img)
+              ew, eh = 46, 56
+              lx = W // 2 - GAP // 2 - ew + 4
+              rx = W // 2 + GAP // 2 + 4
+              draw_eye(d, lx, rx, H // 2 - 10 + oy, ew, eh, dot_oy=-6)
+              f_think.append(img)
+          save_gif("think", f_think, 200)
+
+          # 8. Wake (Active pop)
+          f_wake = []
+          for eh in [30, 74, 68]:
+              img = Image.new("RGB", (W, H), BG)
+              d = ImageDraw.Draw(img)
+              ew = 54
+              lx = W // 2 - GAP // 2 - ew
+              rx = W // 2 + GAP // 2
+              draw_eye(d, lx, rx, H // 2 - 12, ew, eh)
+              f_wake.append(img)
+          save_gif("wake", f_wake, 110)
+
+          print("Generated animated GIFs for Xiaozhi builder!")
           EOF
 
-      - name: Build Official SPIFFS assets.bin
+      - name: Commit GIFs To Repository
         run: |
-          wget https://github.com/igrr/mkspiffs/releases/download/0.2.3/mkspiffs-0.2.3-arduino-esp32-linux64.tar.gz
-          tar -xzf mkspiffs-0.2.3-arduino-esp32-linux64.tar.gz
-          MKBIN=$(find . -maxdepth 2 -type f -name "mkspiffs")
-          chmod +x $MKBIN
-          $MKBIN -c data -b 4096 -p 256 -s 0x100000 assets.bin
-          ls -lh assets.bin
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add gifs/
+          git commit -m "Add animated EMO GIFs (Cyan with Pupils & Mouth)" || echo "No changes"
+          git push
 
-      - name: Upload Binary
+      - name: Upload GIFs as ZIP Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: assets-bin
-          path: assets.bin
+          name: emo-gifs
+          path: gifs/
