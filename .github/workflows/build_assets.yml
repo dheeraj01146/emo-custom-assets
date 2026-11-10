@@ -20,10 +20,9 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Tools
+      - name: Install Pillow & SPIFFS Gen
         run: |
-          pip install pillow
-          sudo apt-get update && sudo apt-get install -y mkspiffs
+          pip install pillow spiffsgen
 
       - name: Create EMO Frames
         run: |
@@ -105,9 +104,9 @@ jobs:
               img.save(f"data/emoji/happy_{i}.png") if i < 3 else img.save(f"data/emoji/wake_{i-3}.png")
           EOF
 
-      - name: Build Official SPIFFS assets.bin
+      - name: Build SPIFFS assets.bin
         run: |
-          mkspiffs -c data -b 4096 -p 256 -s 0x100000 assets.bin
+          spiffsgen 0x100000 data assets.bin
           ls -lh assets.bin
 
       - name: Upload Binary
