@@ -20,10 +20,12 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Pillow & LittleFS
-        run: pip install pillow littlefs-python
+      - name: Install Tools
+        run: |
+          pip install pillow
+          sudo apt-get update && sudo apt-get install -y mkspiffs
 
-      - name: Create EMO Frames with Center Dots and Talking Mouth
+      - name: Create EMO Frames
         run: |
           python - << 'EOF'
           import os
@@ -36,30 +38,20 @@ jobs:
           GAP = 36
 
           def draw_eye_with_dot(draw, lx, rx, ty, ew, eh, r):
-              # Dono bahari Cyan aakhein
               draw.rounded_rectangle([lx, ty, lx + ew, ty + eh], radius=r, fill=CYAN)
               draw.rounded_rectangle([rx, ty, rx + ew, ty + eh], radius=r, fill=CYAN)
-              
-              # Center black dots (Pupils)
               dot_r = 7
-              left_center = (lx + ew // 2, ty + eh // 2)
-              right_center = (rx + ew // 2, ty + eh // 2)
-              
-              draw.ellipse([left_center[0] - dot_r, left_center[1] - dot_r,
-                            left_center[0] + dot_r, left_center[1] + dot_r], fill=BG)
-              draw.ellipse([right_center[0] - dot_r, right_center[1] - dot_r,
-                            right_center[0] + dot_r, right_center[1] + dot_r], fill=BG)
+              lc = (lx + ew // 2, ty + eh // 2)
+              rc = (rx + ew // 2, ty + eh // 2)
+              draw.ellipse([lc[0] - dot_r, lc[1] - dot_r, lc[0] + dot_r, lc[1] + dot_r], fill=BG)
+              draw.ellipse([rc[0] - dot_r, rc[1] - dot_r, rc[0] + dot_r, rc[1] + dot_r], fill=BG)
 
           def draw_mouth(draw, open_h, width=54):
-              # Aakhon ke theek neeche bolne wala mouth
-              mouth_cy = 188
-              mouth_lx = W // 2 - width // 2
-              mouth_rx = W // 2 + width // 2
-              mouth_ty = mouth_cy - open_h // 2
-              mouth_by = mouth_cy + open_h // 2
-              draw.rounded_rectangle([mouth_lx, mouth_ty, mouth_rx, mouth_by], radius=open_h // 2, fill=CYAN)
+              m_cy = 188
+              m_lx = W // 2 - width // 2
+              m_rx = W // 2 + width // 2
+              draw.rounded_rectangle([m_lx, m_cy - open_h // 2, m_rx, m_cy + open_h // 2], radius=open_h // 2, fill=CYAN)
 
-          # 1. Idle & Listening States (Aakhein + Center Dot, Bina Mouth)
           base_frames = [
               ("neutral_0", 58, 76, 18, 0, -12),
               ("neutral_1", 58, 78, 18, 0, -12),
@@ -81,11 +73,9 @@ jobs:
               cy = H // 2 + oy
               lx = (W // 2) - (GAP // 2) - ew + ox
               rx = (W // 2) + (GAP // 2) + ox
-              ty = cy - eh // 2
-              draw_eye_with_dot(draw, lx, rx, ty, ew, eh, r)
+              draw_eye_with_dot(draw, lx, rx, cy - eh // 2, ew, eh, r)
               img.save(f"data/emoji/{name}.png")
 
-          # 2. Blink Frames (Aakhein band hona)
           blink_frames = [
               ("blink_0", 60, 48, 14),
               ("blink_1", 62, 20, 8),
@@ -98,63 +88,27 @@ jobs:
               cy = H // 2 - 12
               lx = (W // 2) - (GAP // 2) - ew
               rx = (W // 2) + (GAP // 2)
-              ty = cy - eh // 2
-              draw.rounded_rectangle([lx, ty, lx + ew, ty + eh], radius=r, fill=CYAN)
-              draw.rounded_rectangle([rx, ty, rx + ew, ty + eh], radius=r, fill=CYAN)
+              draw.rounded_rectangle([lx, cy - eh // 2, lx + ew, cy + eh // 2], radius=r, fill=CYAN)
+              draw.rounded_rectangle([rx, cy - eh // 2, rx + ew, cy + eh // 2], radius=r, fill=CYAN)
               img.save(f"data/emoji/{name}.png")
 
-          # 3. Speaking / Talking Frames (Eyes with Center Dot + Animated Mouth)
-          # Xiaozhi response bolte time in frames ko loop karta hai
           talk_mouth_heights = [6, 16, 26, 14, 8]
           for i, mh in enumerate(talk_mouth_heights):
               img = Image.new("RGB", (W, H), BG)
               draw = ImageDraw.Draw(img)
-              # Aakhein thoda upar shift taaki mouth ke liye clear space rahe
               cy = H // 2 - 20
               ew, eh, r = 58, 76, 18
               lx = (W // 2) - (GAP // 2) - ew
               rx = (W // 2) + (GAP // 2)
-              ty = cy - eh // 2
-              
-              draw_eye_with_dot(draw, lx, rx, ty, ew, eh, r)
+              draw_eye_with_dot(draw, lx, rx, cy - eh // 2, ew, eh, r)
               draw_mouth(draw, open_h=mh, width=56)
-              
-              # Happy / Speaking state map
               img.save(f"data/emoji/happy_{i}.png") if i < 3 else img.save(f"data/emoji/wake_{i-3}.png")
-
-          print("Custom EMO frames with eye dots and talking mouth generated!")
           EOF
 
-      - name: Commit Images To Repository
+      - name: Build Official SPIFFS assets.bin
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/emoji/
-          git commit -m "Updated EMO frames: Center dot eyes + speaking mouth" || echo "No changes"
-          git push
-
-      - name: Build assets.bin
-        run: |
-          python - << 'EOF'
-          import os
-          from littlefs import LittleFS
-
-          fs = LittleFS(block_size=4096, block_count=256)
-          fs.format()
-          fs.mount()
-
-          fs.mkdir('/emoji')
-          for f in sorted(os.listdir('data/emoji')):
-              if f.endswith('.png'):
-                  with open(f'data/emoji/{f}', 'rb') as src:
-                      data = src.read()
-                  with fs.open(f'/emoji/{f}', 'wb') as dst:
-                      dst.write(data)
-
-          with open('assets.bin', 'wb') as out:
-              out.write(fs.context.buffer)
-          print("assets.bin successfully created!")
-          EOF
+          mkspiffs -c data -b 4096 -p 256 -s 0x100000 assets.bin
+          ls -lh assets.bin
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
