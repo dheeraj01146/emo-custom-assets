@@ -1,9 +1,12 @@
-name: Auto Generate and Build EMO Assets
+name: Generate Images and Build Assets
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -12,7 +15,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Python & Pillow
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
@@ -20,7 +23,7 @@ jobs:
       - name: Install Pillow
         run: pip install pillow
 
-      - name: Generate 21 Cyan EMO Frames Automatically
+      - name: Create 21 Cyan EMO Frames
         run: |
           python - << 'EOF'
           import os
@@ -56,18 +59,14 @@ jobs:
           for name, ew, eh, r, ox, oy in frames:
               img = Image.new("RGB", (W, H), BG)
               draw = ImageDraw.Draw(img)
-              
               cy = H // 2 + oy
               lx = (W // 2) - (gap // 2) - ew + ox
               rx = (W // 2) + (gap // 2) + ox
               ty = cy - eh // 2
-              by = ty + eh
-              
-              draw.rounded_rectangle([lx, ty, lx + ew, by], radius=r, fill=CYAN)
-              draw.rounded_rectangle([rx, ty, rx + ew, by], radius=r, fill=CYAN)
+              draw.rounded_rectangle([lx, ty, lx + ew, ty + eh], radius=r, fill=CYAN)
+              draw.rounded_rectangle([rx, ty, rx + ew, ty + eh], radius=r, fill=CYAN)
               img.save(f"data/emoji/{name}.png")
 
-          # Happy frames
           for i, curve in enumerate([25, 30, 25]):
               img = Image.new("RGB", (W, H), BG)
               draw = ImageDraw.Draw(img)
@@ -78,8 +77,15 @@ jobs:
               for x in [lx, rx]:
                   draw.pieslice([x, ty, x + ew, ty + eh], 180, 360, fill=CYAN)
               img.save(f"data/emoji/happy_{i}.png")
-          print("All 21 Cyan frames generated in data/emoji successfully!")
           EOF
+
+      - name: Commit Images To Repository
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/emoji/
+          git commit -m "Auto-generated 21 Cyan EMO frames" || echo "No changes"
+          git push
 
       - name: Download mklittlefs Tool
         run: |
