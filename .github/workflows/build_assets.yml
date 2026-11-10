@@ -107,8 +107,9 @@ jobs:
         run: |
           wget https://github.com/igrr/mkspiffs/releases/download/0.2.3/mkspiffs-0.2.3-arduino-esp32-linux64.tar.gz
           tar -xzf mkspiffs-0.2.3-arduino-esp32-linux64.tar.gz
-          chmod +x mkspiffs
-          ./mkspiffs -c data -b 4096 -p 256 -s 0x100000 assets.bin
+          MKBIN=$(find . -maxdepth 2 -type f -name "mkspiffs")
+          chmod +x $MKBIN
+          $MKBIN -c data -b 4096 -p 256 -s 0x100000 assets.bin
           ls -lh assets.bin
 
       - name: Upload Binary
