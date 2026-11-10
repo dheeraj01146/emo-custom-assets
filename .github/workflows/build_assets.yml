@@ -34,20 +34,16 @@ jobs:
           BG = (0, 0, 0)
           WHITE = (255, 255, 255)
           GAP = 28
-          EYE_R = 32  # Circle radius (width/height = 64px)
+          EYE_R = 32
 
           def draw_round_eyes(draw, cy, radius, dot=True, dot_ox=0, dot_oy=0, blink_scale=1.0):
-              # Dono aakhon ke centers
               lx = W // 2 - GAP // 2 - radius
               rx = W // 2 + GAP // 2 + radius
-
               eh = int(radius * blink_scale)
               
-              # Outer White Round Eyes
               draw.ellipse([lx - radius, cy - eh, lx + radius, cy + eh], fill=WHITE)
               draw.ellipse([rx - radius, cy - eh, rx + radius, cy + eh], fill=WHITE)
 
-              # Center Black Pupil
               if dot and blink_scale > 0.35:
                   dot_r = int(9 * blink_scale)
                   draw.ellipse([lx + dot_ox - dot_r, cy + dot_oy - dot_r,
@@ -64,34 +60,34 @@ jobs:
           def save_gif(name, frames, duration=140):
               frames[0].save(f"gifs/{name}.gif", save_all=True, append_images=frames[1:], duration=duration, loop=0)
 
-          # 1. neutral (Normal Gol Aakhein + Breathing)
-          f = []
+          # 1. Neutral
+          f_neutral = []
           for r_adj in [0, 1, 0, -1]:
               img = Image.new("RGB", (W, H), BG)
               draw_round_eyes(ImageDraw.Draw(img), H // 2 - 10, EYE_R + r_adj)
-              f.append(img)
-          save_gif("neutral", f, 220)
+              f_neutral.append(img)
+          save_gif("neutral", f_neutral, 220)
 
-          # 2. blink (Aankh jhapakna)
-          f = []
+          # 2. Blink
+          f_blink = []
           for sc in [1.0, 0.7, 0.3, 0.08, 0.5, 1.0]:
               img = Image.new("RGB", (W, H), BG)
               draw_round_eyes(ImageDraw.Draw(img), H // 2 - 10, EYE_R, blink_scale=sc)
-              f.append(img)
-          save_gif("blink", f, 70)
+              f_blink.append(img)
+          save_gif("blink", f_blink, 70)
 
-          # 3. speak (Gol aakhein + Niche Bolne wala Mouth)
-          f = []
+          # 3. Speak
+          f_speak = []
           for mh in [6, 16, 26, 18, 10, 4]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               draw_round_eyes(d, H // 2 - 18, EYE_R)
               draw_mouth(d, open_h=mh, width=48, cy=176)
-              f.append(img)
-          save_gif("speak", f, 120)
+              f_speak.append(img)
+          save_gif("speak", f_speak, 120)
 
-          # 4. happy (Half circle curve + smiling mouth)
-          f = []
+          # 4. Happy
+          f_happy = []
           for mh in [6, 14, 10]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
@@ -100,92 +96,88 @@ jobs:
               for cx in [lx, rx]:
                   d.pieslice([cx - EYE_R, H // 2 - 40, cx + EYE_R, H // 2 + 20], 180, 360, fill=WHITE)
               draw_mouth(d, open_h=mh, width=44, cy=172)
-              f.append(img)
-          save_gif("happy", f, 160)
+              f_happy.append(img)
+          save_gif("happy", f_happy, 160)
 
-          # 5. sad (Udaas eyes niche dekhti hui)
-          f = []
+          # 5. Sad
+          f_sad = []
           for dy in [0, 2, 4, 2]:
               img = Image.new("RGB", (W, H), BG)
               draw_round_eyes(ImageDraw.Draw(img), H // 2 + dy, EYE_R - 2, dot_oy=9)
-              f.append(img)
-          save_gif("sad", f, 200)
+              f_sad.append(img)
+          save_gif("sad", f_sad, 200)
 
-          # 6. angry (Aakhein thodi cut hui upar se)
-          f = []
+          # 6. Angry
+          f_angry = []
           for sc in [0.95, 1.0, 0.95]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               draw_round_eyes(d, H // 2 - 8, int(EYE_R * sc), dot_oy=2)
-              # Angry cut brows
               d.polygon([(0, 0), (W // 2, 85), (0, 85)], fill=BG)
               d.polygon([(W, 0), (W // 2, 85), (W, 85)], fill=BG)
-              f.append(img)
-          save_gif("angry", f, 180)
+              f_angry.append(img)
+          save_gif("angry", f_angry, 180)
 
-          # 7. listen (Dono aakhein side glance kar rahi hain)
-          f = []
+          # 7. Listen
+          f_listen = []
           for ox in [-12, -16, -12, 0, 12, 16, 12, 0]:
               img = Image.new("RGB", (W, H), BG)
               draw_round_eyes(ImageDraw.Draw(img), H // 2 - 10, EYE_R, dot_ox=ox)
-              f.append(img)
-          save_gif("listen", f, 140)
+              f_listen.append(img)
+          save_gif("listen", f_listen, 140)
 
-          # 8. think (Aakhein upar dekh rahi hain)
-          f = []
+          # 8. Think
+          f_think = []
           for oy in [-8, -12, -8]:
               img = Image.new("RGB", (W, H), BG)
               draw_round_eyes(ImageDraw.Draw(img), H // 2 - 10, EYE_R - 2, dot_oy=oy)
-              f.append(img)
-          save_gif("think", f, 200)
+              f_think.append(img)
+          save_gif("think", f_think, 200)
 
-          # 9. wake (Achanak aakhein khulna / popup)
-          f = []
+          # 9. Wake
+          f_wake = []
           for sc in [0.4, 1.15, 1.0]:
               img = Image.new("RGB", (W, H), BG)
               draw_round_eyes(ImageDraw.Draw(img), H // 2 - 10, int(EYE_R * sc))
-              f.append(img)
-          save_gif("wake", f, 120)
+              f_wake.append(img)
+          save_gif("wake", f_wake, 120)
 
-          # 10. surprise (Badi gol aakhein)
-          f = []
+          # 10. Surprise
+          f_surprise = []
           for s in [1.15, 1.2, 1.15]:
               img = Image.new("RGB", (W, H), BG)
               draw_round_eyes(ImageDraw.Draw(img), H // 2 - 10, int(EYE_R * s))
-              f.append(img)
-          save_gif("surprise", f, 150)
+              f_surprise.append(img)
+          save_gif("surprise", f_surprise, 150)
 
-          # 11. sleep (Band aakhein / lines)
-          f = []
+          # 11. Sleep
+          f_sleep = []
           for sc in [0.08, 0.1, 0.08]:
               img = Image.new("RGB", (W, H), BG)
               draw_round_eyes(ImageDraw.Draw(img), H // 2 + 5, EYE_R, dot=False, blink_scale=sc)
-              f.append(img)
-          save_gif("sleep", f, 300)
+              f_sleep.append(img)
+          save_gif("sleep", f_sleep, 300)
 
-          # 12. wink (Ek aakh khuli, ek band)
-          f = []
+          # 12. Wink
+          f_wink = []
           for i in range(3):
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               lx = W // 2 - GAP // 2 - EYE_R
               rx = W // 2 + GAP // 2 + EYE_R
               cy = H // 2 - 10
-              # Left open
               d.ellipse([lx - EYE_R, cy - EYE_R, lx + EYE_R, cy + EYE_R], fill=WHITE)
               d.ellipse([lx - 9, cy - 9, lx + 9, cy + 9], fill=BG)
-              # Right closed
               d.ellipse([rx - EYE_R, cy - 3, rx + EYE_R, cy + 3], fill=WHITE)
-              f.append(img)
-          save_gif("wink", f, 220)
+              f_wink.append(img)
+          save_gif("wink", f_wink, 220)
 
-          # 13 to 21: Baaki states ke liye specialized variations
-          states = ["doubt", "curious", "confused", "scared", "proud", "shy", "laugh", "excited", "reboot"]
-          for st in states:
-              # Save dedicated animated GIF for each state
+          # 13 to 21. Baaki states
+          extra_states = ["doubt", "curious", "confused", "scared", "proud", "shy", "laugh", "excited", "reboot"]
+          for st in extra_states:
               save_gif(st, f_neutral if st in ["doubt", "curious"] else f_wake, 180)
 
-          print("Generated all 21 round-eye White+Black EMO GIFs successfully!")
+          print("All 21 round-eye GIFs generated!")
           EOF
 
       - name: Commit GIFs To Repository
@@ -193,7 +185,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add gifs/
-          git commit -m "Update EMO GIFs: Round White Eyes + Black Pupils + Black BG" || echo "No changes"
+          git commit -m "Fix variable scope and update round EMO GIFs" || echo "No changes"
           git push
 
       - name: Upload GIFs ZIP
