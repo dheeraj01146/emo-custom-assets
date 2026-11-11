@@ -23,7 +23,7 @@ jobs:
       - name: Install Pillow
         run: pip install pillow
 
-      - name: Generate Perfect EMO GIFs with Curved Eyelids
+      - name: Generate Perfect EMO GIFs with Living Story Loop
         run: |
           python - << 'EOF'
           import os
@@ -43,19 +43,11 @@ jobs:
           cy = H // 2 - 10
 
           def draw_eye_with_eyelid(draw, cx, cy, r=R, ox=0, oy=0, lid_pct=0.0):
-              # 1. Base Complete Circle Eye (White)
               draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=WHITE)
-              
-              # 2. Black Pupil (Hamesha center me fixed)
               draw.ellipse([cx + ox - PR, cy + oy - PR, cx + ox + PR, cy + oy + PR], fill=BG)
-              
-              # 3. Real Smooth Curved Eyelid
               if lid_pct > 0.02:
-                  # Upper lid drops down
                   drop_y = (cy - r) + int(2 * r * min(lid_pct, 1.0))
-                  # Black mask covering top
                   draw.rectangle([cx - r - 4, cy - r - 6, cx + r + 4, drop_y], fill=BG)
-                  # Natural curved eyelid fold (taaki pichki hui na lage)
                   if lid_pct < 0.95:
                       curve_h = int(12 * (1.0 - abs(lid_pct - 0.5) * 2))
                       draw.chord([cx - r, drop_y - curve_h, cx + r, drop_y + curve_h], 0, 180, fill=BG)
@@ -71,50 +63,99 @@ jobs:
           def save_gif(name, frames, duration=150):
               frames[0].save(f"gifs/{name}.gif", save_all=True, append_images=frames[1:], duration=duration, loop=0)
 
-          # 1. NEUTRAL (Real Eyelid Blink + Living Idle Routines)
+          # ==========================================
+          # 1. NEUTRAL (Living EMO Long Autonomous Life Cycle)
+          # ==========================================
           f_neutral = []
-          # Natural smooth eyelid progression: Open -> 25% -> 60% -> 95% -> 100% -> 50% -> Open
-          for lid in [0.0, 0.0, 0.25, 0.65, 0.95, 1.0, 0.6, 0.2, 0.0, 0.0]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy, lid_pct=lid)
-              draw_eye_with_eyelid(d, rx, cy, lid_pct=lid)
-              f_neutral.append(img)
 
-          # Tea sipping
-          for st in [0, 1, 2, 1]:
+          # Helper to add standard idle breathing & blinking frames
+          def add_idle_wait(frames, count=8, ox=0, oy=0):
+              for i in range(count):
+                  # Periodic natural blinks
+                  lid = 0.0
+                  if i in [3, 4]: lid = 0.85
+                  elif i == 5: lid = 0.2
+                  img = Image.new("RGB", (W, H), BG)
+                  d = ImageDraw.Draw(img)
+                  draw_eye_with_eyelid(d, lx, cy, ox=ox, oy=oy, lid_pct=lid)
+                  draw_eye_with_eyelid(d, rx, cy, ox=ox, oy=oy, lid_pct=lid)
+                  frames.append(img)
+
+          # 1. Start with peaceful idle look (looking straight, blinking)
+          add_idle_wait(f_neutral, count=10)
+
+          # 2. Activity: CHAI PEENA (Takes out steaming mug, sips 3 times)
+          for st in [0, 1, 2, 3, 2, 1, 2]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               draw_eye_with_eyelid(d, lx, cy, lid_pct=0.2)
               draw_eye_with_eyelid(d, rx, cy, lid_pct=0.2)
+              # Mouth & Cup
               d.ellipse([W//2 - 6, 216, W//2 + 6, 226], fill=WHITE)
               d.rounded_rectangle([W//2 - 16, 234, W//2 + 16, 258], radius=5, fill=WHITE)
               d.arc([W//2 + 12, 238, W//2 + 22, 252], -90, 90, fill=WHITE, width=2)
-              d.line([(W//2 - 4, 228 - st*2), (W//2 - 3, 222 - st*2)], fill=WHITE, width=2)
+              # Steam
+              sy = 228 - st*2
+              d.line([(W//2 - 4, sy), (W//2 - 3, sy - 5)], fill=WHITE, width=2)
+              d.line([(W//2 + 4, sy), (W//2 + 5, sy - 5)], fill=WHITE, width=2)
               f_neutral.append(img)
 
-          # Burger bite
-          for by in [240, 232, 236, 242]:
+          # 3. Idle rest (looks to the right, blinks)
+          add_idle_wait(f_neutral, count=8, ox=10)
+
+          # 4. Activity: BURGER KHANA (Bites burger with happy squints)
+          for by in [242, 230, 236, 228, 238, 245]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy, oy=2)
-              draw_eye_with_eyelid(d, rx, cy, oy=2)
+              draw_eye_with_eyelid(d, lx, cy, oy=4, lid_pct=0.1)
+              draw_eye_with_eyelid(d, rx, cy, oy=4, lid_pct=0.1)
               d.rounded_rectangle([W//2 - 20, by, W//2 + 20, by + 14], radius=6, fill=WHITE)
               d.line([(W//2 - 18, by + 7), (W//2 + 18, by + 7)], fill=BG, width=2)
               f_neutral.append(img)
 
-          # Knitting sweater
-          for kx in [-6, 6, -6, 6]:
+          # 5. Idle rest (looks to the left, blinks)
+          add_idle_wait(f_neutral, count=8, ox=-10)
+
+          # 6. Activity: PLAYING WITH BOUNCING BALL (Khelna)
+          # Ball bounces across screen, EMO eyes follow the ball!
+          ball_path = [
+              (60, 260, -12, 8),
+              (110, 200, -6, 2),
+              (160, 160, 0, -6),
+              (210, 200, 6, 2),
+              (260, 260, 12, 8),
+              (210, 220, 6, 4),
+              (160, 190, 0, 0)
+          ]
+          for bx, by, ex, ey in ball_path:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy, oy=4, lid_pct=0.15)
-              draw_eye_with_eyelid(d, rx, cy, oy=4, lid_pct=0.15)
+              # Eyes following the ball
+              draw_eye_with_eyelid(d, lx, cy, ox=ex, oy=ey)
+              draw_eye_with_eyelid(d, rx, cy, ox=ex, oy=ey)
+              # Bouncing small ball
+              d.ellipse([bx - 10, by - 10, bx + 10, by + 10], fill=WHITE)
+              f_neutral.append(img)
+
+          # 7. Idle rest (relaxing after game)
+          add_idle_wait(f_neutral, count=8)
+
+          # 8. Activity: SWEATER BUNNA (Knitting needles fast crafting)
+          for kx in [-8, 8, -8, 8, -6, 6]:
+              img = Image.new("RGB", (W, H), BG)
+              d = ImageDraw.Draw(img)
+              draw_eye_with_eyelid(d, lx, cy, oy=4, lid_pct=0.18)
+              draw_eye_with_eyelid(d, rx, cy, oy=4, lid_pct=0.18)
               d.ellipse([W//2 - 14, 230, W//2 + 14, 258], fill=WHITE)
               d.line([(W//2 - 26 + kx, 222), (W//2 + 8, 256)], fill=WHITE, width=3)
               d.line([(W//2 + 26 - kx, 222), (W//2 - 8, 256)], fill=WHITE, width=3)
               f_neutral.append(img)
-          save_gif("neutral", f_neutral, 140)
 
+          save_gif("neutral", f_neutral, 150)
+
+          # ==========================================
+          # BAAKI 20 EXPRESSIONS (PRESERVED & OPTIMIZED)
+          # ==========================================
           # 2. HAPPY
           f_happy = []
           for dy in [0, -4, -6, -2]:
@@ -161,7 +202,7 @@ jobs:
               f_sad.append(img)
           save_gif("sad", f_sad, 180)
 
-          # 6. ANGRY (Flames from sides + Slanted brows)
+          # 6. ANGRY (Flames)
           f_angry = []
           for fl in [0, 8, 14, 6]:
               img = Image.new("RGB", (W, H), BG)
@@ -187,7 +228,7 @@ jobs:
               f_crying.append(img)
           save_gif("crying", f_crying, 130)
 
-          # 8. LOVING (Minecraft hearts from sides)
+          # 8. LOVING (Hearts from side)
           f_loving = []
           for i, hy in enumerate([0, 10, 22, 34, 46]):
               img = Image.new("RGB", (W, H), BG)
@@ -236,7 +277,7 @@ jobs:
               f_shocked.append(img)
           save_gif("shocked", f_shocked, 130)
 
-          # 12. THINKING (Look up + real eyelid blink)
+          # 12. THINKING (Look up + blink)
           f_thinking = []
           for lid in [0.0, 0.0, 0.45, 0.95, 0.4, 0.0]:
               img = Image.new("RGB", (W, H), BG)
@@ -246,7 +287,7 @@ jobs:
               f_thinking.append(img)
           save_gif("thinking", f_thinking, 160)
 
-          # 13. WINKING (Left stays open, right eyelid closes)
+          # 13. WINKING
           f_wink = []
           for lid in [0.0, 0.35, 0.8, 1.0, 1.0, 0.5, 0.0]:
               img = Image.new("RGB", (W, H), BG)
@@ -312,7 +353,7 @@ jobs:
               f_kisses.append(img)
           save_gif("kisses", f_kisses, 160)
 
-          # 18. CONFIDENT (Eyelid slightly lowered + blink)
+          # 18. CONFIDENT
           f_confident = []
           for lid in [0.25, 0.25, 0.6, 0.95, 0.5, 0.25]:
               img = Image.new("RGB", (W, H), BG)
@@ -323,7 +364,7 @@ jobs:
               f_confident.append(img)
           save_gif("confident", f_confident, 160)
 
-          # 19. SLEEPY (Full open -> Curved Eyelid smooth drop -> Zzz)
+          # 19. SLEEPY
           f_sleepy = []
           for lid, zy in [(0.0, 0), (0.35, 0), (0.7, 0), (1.0, 4), (1.0, 12), (1.0, 20)]:
               img = Image.new("RGB", (W, H), BG)
@@ -336,7 +377,7 @@ jobs:
               f_sleepy.append(img)
           save_gif("sleepy", f_sleepy, 180)
 
-          # 20. SILLY (Playful smirk + tongue)
+          # 20. SILLY
           f_silly = []
           for r_diff, ty in [(-4, 8), (4, 16), (-4, 22), (0, 12)]:
               img = Image.new("RGB", (W, H), BG)
@@ -348,7 +389,7 @@ jobs:
               f_silly.append(img)
           save_gif("silly", f_silly, 140)
 
-          # 21. CONFUSED (Head Shake: No-No)
+          # 21. CONFUSED
           f_confused = []
           for hx in [0, -18, -24, 0, 18, 24, 0]:
               img = Image.new("RGB", (W, H), BG)
@@ -359,7 +400,7 @@ jobs:
               f_confused.append(img)
           save_gif("confused", f_confused, 130)
 
-          print("Generated 21 perfected EMO GIFs with true curved eyelid edges!")
+          print("Generated full living autonomous EMO animation suite!")
           EOF
 
       - name: Commit GIFs To Repository
@@ -367,7 +408,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add gifs/
-          git commit -m "Add distinct curved eyelid edge to prevent flat squished eyes" || echo "No changes"
+          git commit -m "Expand neutral into full autonomous living loop with tea, burger, ball play, and knitting" || echo "No changes"
           git push
 
       - name: Upload GIFs ZIP
