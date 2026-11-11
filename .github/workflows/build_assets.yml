@@ -56,13 +56,17 @@ jobs:
               yt = y_mid - cur_h // 2
               yb = y_mid + cur_h // 2
               r = min(CORNER, cur_h // 2)
-              # Left eye
               draw.rounded_rectangle([lx1 + ox, yt, lx1 + EW + ox, yb], radius=r, fill=CYAN)
-              # Right eye
               draw.rounded_rectangle([rx1 + ox, yt, rx1 + EW + ox, yb], radius=r, fill=CYAN)
 
+          def draw_mc_heart(draw, hx, cur_y):
+              draw.rectangle([hx - 10, cur_y - 8, hx - 3, cur_y], fill=RED)
+              draw.rectangle([hx + 3, cur_y - 8, hx + 10, cur_y], fill=RED)
+              draw.rectangle([hx - 14, cur_y, hx + 14, cur_y + 8], fill=RED)
+              draw.rectangle([hx - 10, cur_y + 8, hx + 10, cur_y + 14], fill=RED)
+              draw.rectangle([hx - 5, cur_y + 14, hx + 5, cur_y + 18], fill=RED)
+
           def draw_sleeping_arcs(draw, y=140):
-              # Sleeping slit arcs
               draw.arc([lx1 + 6, y, lx1 + EW - 6, y + 36], 20, 160, fill=CYAN, width=7)
               draw.arc([rx1 + 6, y, rx1 + EW - 6, y + 36], 20, 160, fill=CYAN, width=7)
 
@@ -81,72 +85,56 @@ jobs:
               return [img.copy() for _ in range(count)]
 
           # ==========================================================
-          # 1. NEUTRAL (Full Living.ai Daily Routine Loop)
-          # Morning Blink -> Exercise Dumbbell -> Breakfast Tea -> Video Game -> Sleep
+          # 1. NEUTRAL (Living Routine: Blink -> Dumbbell -> Tea -> Game)
           # ==========================================================
           f_neu = []
-
-          # A. Normal Idle Looking & Clean Eyelid Blinks (3s)
           img_idle = Image.new("RGB", (W, H), BG)
           draw_emo_eyes(ImageDraw.Draw(img_idle))
           f_neu += hold(img_idle, count=25)
 
-          # Blink
           for l in [0.3, 0.75, 0.95, 0.6, 0.0]:
               img_b = Image.new("RGB", (W, H), BG)
               draw_emo_eyes(ImageDraw.Draw(img_b), lid=l)
               f_neu.append(img_b)
           f_neu += hold(img_idle, count=15)
 
-          # B. Morning Exercise (Lifting Dumbbell up and down)
+          # Exercise Dumbbell
           for dy in [0, -6, -12, -18, -12, -6]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              # Eyes shift up slightly
               draw_emo_eyes(d, y_top=75, h=54)
-              # Dumbbell weights
               d.rounded_rectangle([110, 205 + dy, 126, 245 + dy], radius=6, fill=YELLOW)
               d.rounded_rectangle([194, 205 + dy, 210, 245 + dy], radius=6, fill=YELLOW)
-              # Rod
               d.rectangle([126, 222 + dy, 194, 228 + dy], fill=WHITE)
-              # Robot cute arm holding bar
               d.rounded_rectangle([150, 218 + dy, 170, 240 + dy], radius=5, fill=BLUE)
               f_neu += hold(img, count=4)
 
-          # C. Breakfast Time (Tea Cup Steaming + Toast)
+          # Breakfast Tea & Toast
           for st in [0, 2, 4, 2]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              # Calm happy squint eyes at top
               draw_emo_eyes(d, y_top=80, h=50)
-              # Toast bread
               d.polygon([(90, 245), (105, 215), (135, 215), (145, 245)], fill=(225, 175, 95))
               d.line([(96, 235), (139, 235)], fill=(185, 125, 55), width=2)
-              # Tea cup
               d.rounded_rectangle([165, 215, 215, 252], radius=7, fill=CYAN)
               d.arc([205, 222, 228, 245], -90, 90, fill=CYAN, width=4)
-              # Steam smoke
               d.line([(180, 205 - st), (184, 195 - st)], fill=WHITE, width=2)
               d.line([(200, 205 - st), (204, 195 - st)], fill=WHITE, width=2)
               f_neu += hold(img, count=6)
 
-          # D. Playing Video Games (Handheld controller with active buttons)
+          # Video Game Controller
           for pressed in [0, 1, 0, 1]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               draw_emo_eyes(d, y_top=75, h=56)
-              # Game Controller Body
               d.rounded_rectangle([115, 205, 205, 255], radius=14, fill=BLUE)
-              # D-pad
               d.rectangle([130, 225, 144, 235], fill=WHITE)
               d.rectangle([134, 221, 140, 239], fill=WHITE)
-              # Action Buttons
               btn_col = YELLOW if pressed else RED
               d.ellipse([175, 222, 185, 232], fill=btn_col)
               d.ellipse([185, 230, 195, 240], fill=GREEN)
               f_neu += hold(img, count=5)
 
-          # Return to Calm Center
           f_neu += hold(img_idle, count=15)
           save_gif("neutral", f_neu, duration=65)
 
@@ -179,7 +167,7 @@ jobs:
 
           # ==========================================================
           # 4. FUNNY
-          # ==========================================
+          # ==========================================================
           f_fun = []
           for dy, mh in [(0, 18), (-3, 26), (0, 20)]:
               img = Image.new("RGB", (W, H), BG)
@@ -195,7 +183,6 @@ jobs:
           f_sad = []
           img_sad = Image.new("RGB", (W, H), BG)
           d_s = ImageDraw.Draw(img_sad)
-          # Drooping sad eyes
           draw_emo_eyes(d_s, y_top=cy_norm + 16, h=56)
           d_s.polygon([(lx1, cy_norm + 16), (lx1 + EW, cy_norm + 32), (lx1, cy_norm + 32)], fill=BG)
           d_s.polygon([(rx1 + EW, cy_norm + 16), (rx1, cy_norm + 32), (rx1 + EW, cy_norm + 32)], fill=BG)
@@ -209,24 +196,22 @@ jobs:
           save_gif("sad", f_sad, duration=60)
 
           # ==========================================================
-          # 6. ANGRY (Official Boxing Practice with Red Gloves)
+          # 6. ANGRY (Boxing Practice)
           # ==========================================================
           f_ang = []
           for gx in [0, 8, -6, 0]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              # Slanted fierce eyes
               draw_emo_eyes(d, y_top=cy_norm, h=66)
               d.polygon([(0, 0), (W // 2, cy_norm + 26), (0, cy_norm + 26)], fill=BG)
               d.polygon([(W, 0), (W // 2, cy_norm + 26), (W, cy_norm + 26)], fill=BG)
-              # Red Boxing Gloves Punching
               d.rounded_rectangle([lx1 - 12 + gx, cy_norm + 30, lx1 + 28 + gx, cy_norm + 68], radius=10, fill=RED)
               d.rounded_rectangle([rx1 + EW - 28 - gx, cy_norm + 30, rx1 + EW + 12 - gx, cy_norm + 68], radius=10, fill=RED)
               f_ang += hold(img, count=3)
           save_gif("angry", f_ang, duration=60)
 
           # ==========================================================
-          # 7. CRYING (Fast smooth pouring tears)
+          # 7. CRYING (Fast tears)
           # ==========================================================
           f_cry = []
           for ty in range(0, 64, 8):
@@ -295,7 +280,7 @@ jobs:
           save_gif("shocked", f_shk, duration=60)
 
           # ==========================================================
-          # 12. THINKING (Ping-pong ball tracking from video)
+          # 12. THINKING (Ping-pong ball tracking)
           # ==========================================================
           f_thi = []
           ball_spots = [(90, -16), (160, 0), (230, 16), (160, 0)]
@@ -317,9 +302,7 @@ jobs:
 
           img_w1 = Image.new("RGB", (W, H), BG)
           d_w = ImageDraw.Draw(img_w1)
-          # Left eye stays open
           d_w.rounded_rectangle([lx1, cy_norm, lx1 + EW, cy_norm + EH], radius=CORNER, fill=CYAN)
-          # Right eye winks to a slit line
           d_w.rounded_rectangle([rx1, cy_norm + EH//2 - 3, rx1 + EW, cy_norm + EH//2 + 3], radius=3, fill=CYAN)
           f_wnk += hold(img_w1, count=18)
           f_wnk += hold(img_w0, count=6)
@@ -359,19 +342,16 @@ jobs:
           save_gif("relaxed", f_rel, duration=70)
 
           # ==========================================================
-          # 16. DELICIOUS (Burger + Juice cup with straw from video!)
+          # 16. DELICIOUS (Burger + Juice Drink)
           # ==========================================================
           f_del = []
           for bite in [0, 4, 8, 4]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
-              # Chewing squint eyes
               draw_emo_eyes(d, y_top=80, h=44)
-              # Burger
               d.rounded_rectangle([95, 210, 155, 248], radius=8, fill=(230, 165, 75))
               d.line([(100, 225), (150, 225)], fill=GREEN, width=4)
               d.line([(100, 232), (150, 232)], fill=(160, 50, 30), width=4)
-              # Drink glass with straw
               d.rounded_rectangle([175, 212, 215, 252], radius=6, fill=BLUE)
               d.line([(195, 212), (195, 192), (210, 185)], fill=CYAN, width=4)
               f_del += hold(img, count=4)
@@ -412,7 +392,7 @@ jobs:
           save_gif("confident", f_cnf, duration=60)
 
           # ==========================================================
-          # 19. SLEEPY (Official sleeping curved slit arcs from 00:00)
+          # 19. SLEEPY (Sleeping Slit Arcs)
           # ==========================================================
           f_slp = []
           for y_arc in [135, 140, 145, 140]:
@@ -447,7 +427,7 @@ jobs:
               f_cnf2 += hold(img, count=2)
           save_gif("confused", f_cnf2, duration=55)
 
-          print("Generated 100% true-to-video official EMO animations!")
+          print("Generated 100% working EMO animations!")
           EOF
 
       - name: Commit GIFs To Repository
@@ -455,7 +435,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add gifs/
-          git commit -m "Switch to official Living.ai squircle eyes and true routine activities from video" || echo "No changes"
+          git commit -m "Fix draw_mc_heart missing definition and rebuild assets" || echo "No changes"
           git push
 
       - name: Upload GIFs ZIP
