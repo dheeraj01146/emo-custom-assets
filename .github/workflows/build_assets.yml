@@ -1,4 +1,4 @@
-name: Generate Official Style Expressive EMO GIFs
+name: Generate Ultra High-End Studio EMO GIFs
 
 on:
   push:
@@ -23,117 +23,149 @@ jobs:
       - name: Install Pillow
         run: pip install pillow
 
-      - name: Generate True EMO Living Animations
+      - name: Generate Anti-Aliased Studio EMO Graphics
         run: |
           python - << 'EOF'
           import os
           from PIL import Image, ImageDraw
 
           os.makedirs("gifs", exist_ok=True)
-          W, H = 320, 320
+          # 4X Supersampling for perfect anti-aliased studio quality
+          SCALE = 4
+          W, H = 320 * SCALE, 320 * SCALE
+          TARGET_SIZE = (320, 320)
+          
           BG = (0, 0, 0)
           CYAN = (0, 245, 255)
+          CYAN_GLOW = (0, 180, 210)
           WHITE = (255, 255, 255)
           RED = (255, 45, 75)
           ORANGE = (255, 130, 0)
-          YELLOW = (255, 220, 20)
-          BROWN = (180, 110, 50)
-          GREEN = (60, 220, 80)
-          PINK = (255, 110, 180)
-          PURPLE = (170, 70, 250)
-          BLUE = (80, 170, 255)
+          YELLOW = (255, 225, 25)
+          BROWN = (175, 105, 45)
+          GREEN = (50, 220, 80)
+          PINK = (255, 105, 180)
+          PURPLE = (170, 60, 250)
+          BLUE = (70, 160, 255)
 
-          # Official EMO eye: Cyan rounded-rectangle (No pupil)
-          EW, EH = 88, 76
-          CORNER = 22
-          lx1, rx1 = 52, 180
-          cy_norm = 110
+          # High-Res Eyeball Parameters
+          EW, EH = 92 * SCALE, 80 * SCALE
+          CORNER = 26 * SCALE
+          lx1 = 48 * SCALE
+          rx1 = 180 * SCALE
+          cy_norm = 105 * SCALE
+
+          def create_hi_canvas():
+              return Image.new("RGB", (W, H), BG)
+
+          def render_downsample(hi_img):
+              return hi_img.resize(TARGET_SIZE, Image.Resampling.LANCZOS)
+
+          def draw_studio_eye(draw, x, yt, yb, r):
+              # Outer subtle soft border glow
+              draw.rounded_rectangle([x - 2*SCALE, yt - 2*SCALE, x + EW + 2*SCALE, yb + 2*SCALE], radius=r + 2*SCALE, fill=CYAN_GLOW)
+              # Main Vibrant Eye Body
+              draw.rounded_rectangle([x, yt, x + EW, yb], radius=r, fill=CYAN)
+              # Top glass highlight reflection for rich depth
+              hl_h = max(int((yb - yt) * 0.22), 4 * SCALE)
+              draw.rounded_rectangle([x + 6*SCALE, yt + 4*SCALE, x + EW - 6*SCALE, yt + 4*SCALE + hl_h], radius=r//2, fill=(180, 255, 255))
 
           def draw_emo_eyes(draw, y_top=cy_norm, h=EH, lid=0.0, ox=0):
               cur_h = int(h * (1.0 - lid))
-              cur_h = max(cur_h, 4)
+              cur_h = max(cur_h, 6 * SCALE)
               y_mid = y_top + h // 2
               yt = y_mid - cur_h // 2
               yb = y_mid + cur_h // 2
               r = min(CORNER, cur_h // 2)
-              draw.rounded_rectangle([lx1 + ox, yt, lx1 + EW + ox, yb], radius=r, fill=CYAN)
-              draw.rounded_rectangle([rx1 + ox, yt, rx1 + EW + ox, yb], radius=r, fill=CYAN)
+              draw_studio_eye(draw, lx1 + ox, yt, yb, r)
+              draw_studio_eye(draw, rx1 + ox, yt, yb, r)
+
+          def draw_sleeping_arcs(draw, y=140 * SCALE):
+              for cx in [lx1, rx1]:
+                  draw.arc([cx + 6*SCALE, y, cx + EW - 6*SCALE, y + 42*SCALE], 15, 165, fill=CYAN, width=8*SCALE)
 
           def draw_mc_heart(draw, hx, cur_y):
-              draw.rectangle([hx - 10, cur_y - 8, hx - 3, cur_y], fill=RED)
-              draw.rectangle([hx + 3, cur_y - 8, hx + 10, cur_y], fill=RED)
-              draw.rectangle([hx - 14, cur_y, hx + 14, cur_y + 8], fill=RED)
-              draw.rectangle([hx - 10, cur_y + 8, hx + 10, cur_y + 14], fill=RED)
-              draw.rectangle([hx - 5, cur_y + 14, hx + 5, cur_y + 18], fill=RED)
+              s = SCALE
+              draw.rectangle([hx - 10*s, cur_y - 8*s, hx - 3*s, cur_y], fill=RED)
+              draw.rectangle([hx + 3*s, cur_y - 8*s, hx + 10*s, cur_y], fill=RED)
+              draw.rectangle([hx - 14*s, cur_y, hx + 14*s, cur_y + 8*s], fill=RED)
+              draw.rectangle([hx - 10*s, cur_y + 8*s, hx + 10*s, cur_y + 14*s], fill=RED)
+              draw.rectangle([hx - 5*s, cur_y + 14*s, hx + 5*s, cur_y + 18*s], fill=RED)
 
-          def draw_sleeping_arcs(draw, y=140):
-              draw.arc([lx1 + 6, y, lx1 + EW - 6, y + 36], 20, 160, fill=CYAN, width=7)
-              draw.arc([rx1 + 6, y, rx1 + EW - 6, y + 36], 20, 160, fill=CYAN, width=7)
-
-          def save_gif(name, frames, duration=70):
-              opt = [f.convert("P", palette=Image.ADAPTIVE, colors=64) for f in frames]
-              opt[0].save(
-                  f"gifs/{name}.gif",
-                  save_all=True,
-                  append_images=opt[1:],
-                  duration=duration,
-                  loop=0,
-                  optimize=True
-              )
-
-          def hold(img, count=8):
+          def hold(img, count=6):
               return [img.copy() for _ in range(count)]
 
+          def save_gif(name, frames, duration=65):
+              frames[0].save(
+                  f"gifs/{name}.gif",
+                  save_all=True,
+                  append_images=frames[1:],
+                  duration=duration,
+                  loop=0
+              )
+
           # ==========================================================
-          # 1. NEUTRAL (Living Routine: Blink -> Dumbbell -> Tea -> Game)
+          # 1. NEUTRAL (Anti-Aliased Studio Living Sequence)
           # ==========================================================
           f_neu = []
-          img_idle = Image.new("RGB", (W, H), BG)
-          draw_emo_eyes(ImageDraw.Draw(img_idle))
+          hi = create_hi_canvas()
+          draw_emo_eyes(ImageDraw.Draw(hi))
+          img_idle = render_downsample(hi)
           f_neu += hold(img_idle, count=25)
 
-          for l in [0.3, 0.75, 0.95, 0.6, 0.0]:
-              img_b = Image.new("RGB", (W, H), BG)
-              draw_emo_eyes(ImageDraw.Draw(img_b), lid=l)
-              f_neu.append(img_b)
+          # Anti-aliased Blink
+          for l in [0.25, 0.65, 0.95, 0.5, 0.0]:
+              hi_b = create_hi_canvas()
+              draw_emo_eyes(ImageDraw.Draw(hi_b), lid=l)
+              f_neu.append(render_downsample(hi_b))
           f_neu += hold(img_idle, count=15)
 
-          # Exercise Dumbbell
-          for dy in [0, -6, -12, -18, -12, -6]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=75, h=54)
-              d.rounded_rectangle([110, 205 + dy, 126, 245 + dy], radius=6, fill=YELLOW)
-              d.rounded_rectangle([194, 205 + dy, 210, 245 + dy], radius=6, fill=YELLOW)
-              d.rectangle([126, 222 + dy, 194, 228 + dy], fill=WHITE)
-              d.rounded_rectangle([150, 218 + dy, 170, 240 + dy], radius=5, fill=BLUE)
-              f_neu += hold(img, count=4)
+          # A: Exercise Dumbbell (Curved rounded weights)
+          s = SCALE
+          for dy in [0, -6*s, -14*s, -20*s, -12*s, -4*s]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=72*s, h=54*s)
+              # Chrome bar
+              d.rounded_rectangle([118*s, 222*s + dy, 202*s, 230*s + dy], radius=3*s, fill=WHITE)
+              # Golden Plates
+              d.rounded_rectangle([106*s, 202*s + dy, 122*s, 250*s + dy], radius=7*s, fill=YELLOW)
+              d.rounded_rectangle([198*s, 202*s + dy, 214*s, 250*s + dy], radius=7*s, fill=YELLOW)
+              # Cute Robot hand grip
+              d.rounded_rectangle([148*s, 217*s + dy, 172*s, 240*s + dy], radius=6*s, fill=BLUE)
+              f_neu += hold(render_downsample(hi), count=4)
 
-          # Breakfast Tea & Toast
-          for st in [0, 2, 4, 2]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=80, h=50)
-              d.polygon([(90, 245), (105, 215), (135, 215), (145, 245)], fill=(225, 175, 95))
-              d.line([(96, 235), (139, 235)], fill=(185, 125, 55), width=2)
-              d.rounded_rectangle([165, 215, 215, 252], radius=7, fill=CYAN)
-              d.arc([205, 222, 228, 245], -90, 90, fill=CYAN, width=4)
-              d.line([(180, 205 - st), (184, 195 - st)], fill=WHITE, width=2)
-              d.line([(200, 205 - st), (204, 195 - st)], fill=WHITE, width=2)
-              f_neu += hold(img, count=6)
+          # B: Tea Cup & Toast
+          for st in [0, 3*s, 6*s, 3*s]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=78*s, h=50*s)
+              # Toast bread
+              d.rounded_rectangle([88*s, 214*s, 142*s, 254*s], radius=10*s, fill=(230, 175, 95))
+              d.line([(96*s, 234*s), (134*s, 234*s)], fill=(180, 120, 50), width=3*s)
+              # Ceramic Teal Mug
+              d.rounded_rectangle([164*s, 214*s, 216*s, 256*s], radius=8*s, fill=CYAN)
+              d.arc([204*s, 222*s, 232*s, 248*s], -90, 90, fill=CYAN, width=4*s)
+              # Steam curls
+              d.line([(180*s, 204*s - st), (184*s, 192*s - st)], fill=WHITE, width=2*s)
+              d.line([(200*s, 204*s - st), (204*s, 192*s - st)], fill=WHITE, width=2*s)
+              f_neu += hold(render_downsample(hi), count=6)
 
-          # Video Game Controller
+          # C: Gaming Controller
           for pressed in [0, 1, 0, 1]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=75, h=56)
-              d.rounded_rectangle([115, 205, 205, 255], radius=14, fill=BLUE)
-              d.rectangle([130, 225, 144, 235], fill=WHITE)
-              d.rectangle([134, 221, 140, 239], fill=WHITE)
-              btn_col = YELLOW if pressed else RED
-              d.ellipse([175, 222, 185, 232], fill=btn_col)
-              d.ellipse([185, 230, 195, 240], fill=GREEN)
-              f_neu += hold(img, count=5)
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=74*s, h=56*s)
+              # Sleek Gamepad
+              d.rounded_rectangle([112*s, 204*s, 208*s, 258*s], radius=16*s, fill=BLUE)
+              # D-Pad
+              d.rounded_rectangle([126*s, 226*s, 144*s, 236*s], radius=2*s, fill=WHITE)
+              d.rounded_rectangle([131*s, 221*s, 139*s, 241*s], radius=2*s, fill=WHITE)
+              # Buttons
+              b_col = YELLOW if pressed else RED
+              d.ellipse([176*s, 221*s, 188*s, 233*s], fill=b_col)
+              d.ellipse([188*s, 231*s, 200*s, 243*s], fill=GREEN)
+              f_neu += hold(render_downsample(hi), count=5)
 
           f_neu += hold(img_idle, count=15)
           save_gif("neutral", f_neu, duration=65)
@@ -142,56 +174,57 @@ jobs:
           # 2. HAPPY
           # ==========================================================
           f_hap = []
-          for dy in [0, -4, -8, -4, 0]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
+          for dy in [0, -4*s, -8*s, -4*s, 0]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
               for cx in [lx1, rx1]:
-                  d.pieslice([cx, cy_norm - 10 + dy, cx + EW, cy_norm + EH + dy], 180, 360, fill=CYAN)
-                  d.pieslice([cx, cy_norm + 14 + dy, cx + EW, cy_norm + EH + 24 + dy], 180, 360, fill=BG)
-              f_hap += hold(img, count=3)
+                  d.pieslice([cx, cy_norm - 10*s + dy, cx + EW, cy_norm + EH + dy], 180, 360, fill=CYAN)
+                  d.pieslice([cx, cy_norm + 16*s + dy, cx + EW, cy_norm + EH + 26*s + dy], 180, 360, fill=BG)
+              f_hap += hold(render_downsample(hi), count=3)
           save_gif("happy", f_hap, duration=60)
 
           # ==========================================================
           # 3. LAUGHING
           # ==========================================================
           f_lau = []
-          for h in [18, 28, 36, 26]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
+          for h in [18*s, 28*s, 36*s, 26*s]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
               for cx in [lx1, rx1]:
-                  d.pieslice([cx, cy_norm - 6, cx + EW, cy_norm + EH], 180, 360, fill=CYAN)
-                  d.pieslice([cx, cy_norm + 16, cx + EW, cy_norm + EH + 22], 180, 360, fill=BG)
-              d.pieslice([W//2 - 28, 215, W//2 + 28, 215 + h*2], 0, 180, fill=CYAN)
-              f_lau += hold(img, count=3)
+                  d.pieslice([cx, cy_norm - 6*s, cx + EW, cy_norm + EH], 180, 360, fill=CYAN)
+                  d.pieslice([cx, cy_norm + 18*s, cx + EW, cy_norm + EH + 24*s], 180, 360, fill=BG)
+              d.pieslice([W//2 - 28*s, 215*s, W//2 + 28*s, 215*s + h*2], 0, 180, fill=CYAN)
+              f_lau += hold(render_downsample(hi), count=3)
           save_gif("laughing", f_lau, duration=60)
 
           # ==========================================================
           # 4. FUNNY
           # ==========================================================
           f_fun = []
-          for dy, mh in [(0, 18), (-3, 26), (0, 20)]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=cy_norm + dy, h=52)
-              d.pieslice([W//2 - 24, 215 + dy, W//2 + 24, 215 + dy + mh*2], 0, 180, fill=CYAN)
-              f_fun += hold(img, count=4)
+          for dy, mh in [(0, 18*s), (-3*s, 26*s), (0, 20*s)]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=cy_norm + dy, h=54*s)
+              d.pieslice([W//2 - 24*s, 215*s + dy, W//2 + 24*s, 215*s + dy + mh*2], 0, 180, fill=CYAN)
+              f_fun += hold(render_downsample(hi), count=4)
           save_gif("funny", f_fun, duration=65)
 
           # ==========================================================
           # 5. SAD
           # ==========================================================
           f_sad = []
-          img_sad = Image.new("RGB", (W, H), BG)
-          d_s = ImageDraw.Draw(img_sad)
-          draw_emo_eyes(d_s, y_top=cy_norm + 16, h=56)
-          d_s.polygon([(lx1, cy_norm + 16), (lx1 + EW, cy_norm + 32), (lx1, cy_norm + 32)], fill=BG)
-          d_s.polygon([(rx1 + EW, cy_norm + 16), (rx1, cy_norm + 32), (rx1 + EW, cy_norm + 32)], fill=BG)
-          d_s.arc([W//2 - 20, 235, W//2 + 20, 260], 180, 360, fill=CYAN, width=5)
+          hi = create_hi_canvas()
+          d = ImageDraw.Draw(hi)
+          draw_emo_eyes(d, y_top=cy_norm + 16*s, h=56*s)
+          d.polygon([(lx1, cy_norm + 16*s), (lx1 + EW, cy_norm + 34*s), (lx1, cy_norm + 34*s)], fill=BG)
+          d.polygon([(rx1 + EW, cy_norm + 16*s), (rx1, cy_norm + 34*s), (rx1 + EW, cy_norm + 34*s)], fill=BG)
+          d.arc([W//2 - 20*s, 235*s, W//2 + 20*s, 260*s], 180, 360, fill=CYAN, width=5*s)
+          img_sad = render_downsample(hi)
           f_sad += hold(img_sad, count=18)
           for l in [0.5, 0.95, 0.5]:
-              img_b = Image.new("RGB", (W, H), BG)
-              draw_emo_eyes(ImageDraw.Draw(img_b), y_top=cy_norm + 16, h=56, lid=l)
-              f_sad.append(img_b)
+              hi_b = create_hi_canvas()
+              draw_emo_eyes(ImageDraw.Draw(hi_b), y_top=cy_norm + 16*s, h=56*s, lid=l)
+              f_sad.append(render_downsample(hi_b))
           f_sad += hold(img_sad, count=18)
           save_gif("sad", f_sad, duration=60)
 
@@ -199,67 +232,67 @@ jobs:
           # 6. ANGRY (Boxing Practice)
           # ==========================================================
           f_ang = []
-          for gx in [0, 8, -6, 0]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=cy_norm, h=66)
-              d.polygon([(0, 0), (W // 2, cy_norm + 26), (0, cy_norm + 26)], fill=BG)
-              d.polygon([(W, 0), (W // 2, cy_norm + 26), (W, cy_norm + 26)], fill=BG)
-              d.rounded_rectangle([lx1 - 12 + gx, cy_norm + 30, lx1 + 28 + gx, cy_norm + 68], radius=10, fill=RED)
-              d.rounded_rectangle([rx1 + EW - 28 - gx, cy_norm + 30, rx1 + EW + 12 - gx, cy_norm + 68], radius=10, fill=RED)
-              f_ang += hold(img, count=3)
+          for gx in [0, 8*s, -6*s, 0]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=cy_norm, h=66*s)
+              d.polygon([(0, 0), (W // 2, cy_norm + 26*s), (0, cy_norm + 26*s)], fill=BG)
+              d.polygon([(W, 0), (W // 2, cy_norm + 26*s), (W, cy_norm + 26*s)], fill=BG)
+              d.rounded_rectangle([lx1 - 12*s + gx, cy_norm + 30*s, lx1 + 28*s + gx, cy_norm + 70*s], radius=10*s, fill=RED)
+              d.rounded_rectangle([rx1 + EW - 28*s - gx, cy_norm + 30*s, rx1 + EW + 12*s - gx, cy_norm + 70*s], radius=10*s, fill=RED)
+              f_ang += hold(render_downsample(hi), count=3)
           save_gif("angry", f_ang, duration=60)
 
           # ==========================================================
-          # 7. CRYING (Fast tears)
+          # 7. CRYING (Ultra Smooth HD Droplets)
           # ==========================================================
           f_cry = []
-          for ty in range(0, 64, 8):
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=cy_norm + 10, h=54)
-              d.ellipse([lx1 + 38, cy_norm + 60 + ty, lx1 + 52, cy_norm + 78 + ty], fill=BLUE)
-              d.ellipse([rx1 + 38, cy_norm + 60 + ty, rx1 + 52, cy_norm + 78 + ty], fill=BLUE)
-              f_cry += hold(img, count=2)
+          for ty in range(0, 64*s, 8*s):
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=cy_norm + 10*s, h=54*s)
+              d.ellipse([lx1 + 36*s, cy_norm + 60*s + ty, lx1 + 54*s, cy_norm + 82*s + ty], fill=BLUE)
+              d.ellipse([rx1 + 36*s, cy_norm + 60*s + ty, rx1 + 54*s, cy_norm + 82*s + ty], fill=BLUE)
+              f_cry += hold(render_downsample(hi), count=2)
           save_gif("crying", f_cry, duration=50)
 
           # ==========================================================
           # 8. LOVING
           # ==========================================================
           f_lov = []
-          for hy in range(0, 56, 7):
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
+          for hy in range(0, 56*s, 7*s):
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
               draw_emo_eyes(d)
-              draw_mc_heart(d, lx1 - 14, cy_norm + 10 - hy)
-              draw_mc_heart(d, rx1 + EW + 14, cy_norm + 10 - hy)
-              f_lov += hold(img, count=2)
+              draw_mc_heart(d, lx1 - 14*s, cy_norm + 10*s - hy)
+              draw_mc_heart(d, rx1 + EW + 14*s, cy_norm + 10*s - hy)
+              f_lov += hold(render_downsample(hi), count=2)
           save_gif("loving", f_lov, duration=60)
 
           # ==========================================================
           # 9. EMBARRASSED
           # ==========================================================
           f_emb = []
-          img_emb = Image.new("RGB", (W, H), BG)
-          d_e = ImageDraw.Draw(img_emb)
-          draw_emo_eyes(d_e, y_top=cy_norm + 6, h=58)
-          d_e.ellipse([lx1 - 10, cy_norm + 55, lx1 + 45, cy_norm + 75], fill=PINK)
-          d_e.ellipse([rx1 + EW - 45, cy_norm + 55, rx1 + EW + 10, cy_norm + 75], fill=PINK)
-          f_emb += hold(img_emb, count=30)
+          hi = create_hi_canvas()
+          d = ImageDraw.Draw(hi)
+          draw_emo_eyes(d, y_top=cy_norm + 6*s, h=58*s)
+          d.ellipse([lx1 - 10*s, cy_norm + 55*s, lx1 + 45*s, cy_norm + 75*s], fill=PINK)
+          d.ellipse([rx1 + EW - 45*s, cy_norm + 55*s, rx1 + EW + 10*s, cy_norm + 75*s], fill=PINK)
+          f_emb += hold(render_downsample(hi), count=30)
           save_gif("embarrassed", f_emb, duration=70)
 
           # ==========================================================
           # 10. SURPRISED
           # ==========================================================
           f_sur = []
-          for py in [260, 240, 230]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=cy_norm - 6, h=EH)
-              d.ellipse([W//2 - 14, 218, W//2 + 14, 246], fill=CYAN)
-              d.rounded_rectangle([W//2 - 46, py, W//2 - 12, py + 28], radius=12, fill=CYAN)
-              d.rounded_rectangle([W//2 + 12, py, W//2 + 46, py + 28], radius=12, fill=CYAN)
-              f_sur += hold(img, count=4)
+          for py in [260*s, 240*s, 230*s]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=cy_norm - 6*s, h=EH)
+              d.ellipse([W//2 - 14*s, 218*s, W//2 + 14*s, 246*s], fill=CYAN)
+              d.rounded_rectangle([W//2 - 46*s, py, W//2 - 12*s, py + 28*s], radius=12*s, fill=CYAN)
+              d.rounded_rectangle([W//2 + 12*s, py, W//2 + 46*s, py + 28*s], radius=12*s, fill=CYAN)
+              f_sur += hold(render_downsample(hi), count=4)
           f_sur += hold(f_sur[-1], count=16)
           save_gif("surprised", f_sur, duration=60)
 
@@ -267,167 +300,169 @@ jobs:
           # 11. SHOCKED
           # ==========================================================
           f_shk = []
-          img_shk = Image.new("RGB", (W, H), BG)
-          d_k = ImageDraw.Draw(img_shk)
-          draw_emo_eyes(d_k, y_top=cy_norm - 10, h=EH + 8)
-          d_k.ellipse([W//2 - 14, 226, W//2 + 14, 254], fill=CYAN)
+          hi = create_hi_canvas()
+          d = ImageDraw.Draw(hi)
+          draw_emo_eyes(d, y_top=cy_norm - 10*s, h=EH + 8*s)
+          d.ellipse([W//2 - 14*s, 226*s, W//2 + 14*s, 254*s], fill=CYAN)
+          img_shk = render_downsample(hi)
           f_shk += hold(img_shk, count=16)
           for l in [0.4, 0.95, 0.5]:
-              img_b = Image.new("RGB", (W, H), BG)
-              draw_emo_eyes(ImageDraw.Draw(img_b), y_top=cy_norm - 10, h=EH + 8, lid=l)
-              f_shk.append(img_b)
+              hi_b = create_hi_canvas()
+              draw_emo_eyes(ImageDraw.Draw(hi_b), y_top=cy_norm - 10*s, h=EH + 8*s, lid=l)
+              f_shk.append(render_downsample(hi_b))
           f_shk += hold(img_shk, count=16)
           save_gif("shocked", f_shk, duration=60)
 
           # ==========================================================
-          # 12. THINKING (Ping-pong ball tracking)
+          # 12. THINKING (Smooth Ball Tracking)
           # ==========================================================
           f_thi = []
-          ball_spots = [(90, -16), (160, 0), (230, 16), (160, 0)]
+          ball_spots = [(90*s, -16*s), (160*s, 0), (230*s, 16*s), (160*s, 0)]
           for bx, ex in ball_spots:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=cy_norm - 10, h=EH, ox=ex)
-              d.ellipse([bx - 12, 235, bx + 12, 259], fill=YELLOW)
-              f_thi += hold(img, count=6)
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=cy_norm - 10*s, h=EH, ox=ex)
+              d.ellipse([bx - 12*s, 235*s, bx + 12*s, 259*s], fill=YELLOW)
+              f_thi += hold(render_downsample(hi), count=6)
           save_gif("thinking", f_thi, duration=65)
 
           # ==========================================================
           # 13. WINKING
           # ==========================================================
           f_wnk = []
-          img_w0 = Image.new("RGB", (W, H), BG)
-          draw_emo_eyes(ImageDraw.Draw(img_w0))
-          f_wnk += hold(img_w0, count=10)
+          hi_0 = create_hi_canvas()
+          draw_emo_eyes(ImageDraw.Draw(hi_0))
+          f_wnk += hold(render_downsample(hi_0), count=10)
 
-          img_w1 = Image.new("RGB", (W, H), BG)
-          d_w = ImageDraw.Draw(img_w1)
-          d_w.rounded_rectangle([lx1, cy_norm, lx1 + EW, cy_norm + EH], radius=CORNER, fill=CYAN)
-          d_w.rounded_rectangle([rx1, cy_norm + EH//2 - 3, rx1 + EW, cy_norm + EH//2 + 3], radius=3, fill=CYAN)
-          f_wnk += hold(img_w1, count=18)
-          f_wnk += hold(img_w0, count=6)
+          hi_1 = create_hi_canvas()
+          d_w = ImageDraw.Draw(hi_1)
+          draw_studio_eye(d_w, lx1, cy_norm, cy_norm + EH, CORNER)
+          d_w.rounded_rectangle([rx1, cy_norm + EH//2 - 3*s, rx1 + EW, cy_norm + EH//2 + 3*s], radius=3*s, fill=CYAN)
+          f_wnk += hold(render_downsample(hi_1), count=18)
+          f_wnk += hold(render_downsample(hi_0), count=6)
           save_gif("winking", f_wnk, duration=65)
 
           # ==========================================================
           # 14. COOL
           # ==========================================================
           f_coo = []
-          for dy in [0, -2, -4, -2, 0]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              d.rounded_rectangle([lx1 - 6, cy_norm - 14 + dy, lx1 + EW + 6, cy_norm + EH - 10 + dy], radius=10, fill=PURPLE)
-              d.rounded_rectangle([rx1 - 6, cy_norm - 14 + dy, rx1 + EW + 6, cy_norm + EH - 10 + dy], radius=10, fill=PURPLE)
-              d.rectangle([lx1 + EW, cy_norm + 4 + dy, rx1, cy_norm + 14 + dy], fill=PURPLE)
-              d.line([(lx1 + 10, cy_norm - 6 + dy), (lx1 + 30, cy_norm + 20 + dy)], fill=WHITE, width=3)
-              d.line([(rx1 + 10, cy_norm - 6 + dy), (rx1 + 30, cy_norm + 20 + dy)], fill=WHITE, width=3)
-              d.line([(W//2 - 18, 235 + dy), (W//2 + 18, 235 + dy)], fill=CYAN, width=4)
-              f_coo += hold(img, count=5)
+          for dy in [0, -2*s, -4*s, -2*s, 0]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              d.rounded_rectangle([lx1 - 6*s, cy_norm - 14*s + dy, lx1 + EW + 6*s, cy_norm + EH - 10*s + dy], radius=10*s, fill=PURPLE)
+              d.rounded_rectangle([rx1 - 6*s, cy_norm - 14*s + dy, rx1 + EW + 6*s, cy_norm + EH - 10*s + dy], radius=10*s, fill=PURPLE)
+              d.rectangle([lx1 + EW, cy_norm + 4*s + dy, rx1, cy_norm + 14*s + dy], fill=PURPLE)
+              d.line([(lx1 + 10*s, cy_norm - 6*s + dy), (lx1 + 30*s, cy_norm + 20*s + dy)], fill=WHITE, width=3*s)
+              d.line([(rx1 + 10*s, cy_norm - 6*s + dy), (rx1 + 30*s, cy_norm + 20*s + dy)], fill=WHITE, width=3*s)
+              d.line([(W//2 - 18*s, 235*s + dy), (W//2 + 18*s, 235*s + dy)], fill=CYAN, width=4*s)
+              f_coo += hold(render_downsample(hi), count=5)
           save_gif("cool", f_coo, duration=65)
 
           # ==========================================================
           # 15. RELAXED
           # ==========================================================
           f_rel = []
-          for steam in [0, 1, 2, 3, 2, 1]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=cy_norm + 10, h=48)
-              d.ellipse([W//2 - 7, 218, W//2 + 7, 228], fill=CYAN)
-              d.rounded_rectangle([W//2 - 18, 238, W//2 + 18, 266], radius=6, fill=BROWN)
-              d.arc([W//2 + 14, 244, W//2 + 26, 260], -90, 90, fill=BROWN, width=3)
-              sy = 232 - steam*2
-              d.line([(W//2 - 6, sy), (W//2 - 4, sy - 6)], fill=WHITE, width=2)
-              d.line([(W//2 + 6, sy), (W//2 + 8, sy - 6)], fill=WHITE, width=2)
-              f_rel += hold(img, count=4)
+          for steam in [0, 1*s, 2*s, 3*s, 2*s, 1*s]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=cy_norm + 10*s, h=48*s)
+              d.ellipse([W//2 - 7*s, 218*s, W//2 + 7*s, 228*s], fill=CYAN)
+              d.rounded_rectangle([W//2 - 18*s, 238*s, W//2 + 18*s, 266*s], radius=6*s, fill=BROWN)
+              d.arc([W//2 + 14*s, 244*s, W//2 + 26*s, 260*s], -90, 90, fill=BROWN, width=3*s)
+              sy = 232*s - steam*2
+              d.line([(W//2 - 6*s, sy), (W//2 - 4*s, sy - 6*s)], fill=WHITE, width=2*s)
+              d.line([(W//2 + 6*s, sy), (W//2 + 8*s, sy - 6*s)], fill=WHITE, width=2*s)
+              f_rel += hold(render_downsample(hi), count=4)
           save_gif("relaxed", f_rel, duration=70)
 
           # ==========================================================
-          # 16. DELICIOUS (Burger + Juice Drink)
+          # 16. DELICIOUS
           # ==========================================================
           f_del = []
-          for bite in [0, 4, 8, 4]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=80, h=44)
-              d.rounded_rectangle([95, 210, 155, 248], radius=8, fill=(230, 165, 75))
-              d.line([(100, 225), (150, 225)], fill=GREEN, width=4)
-              d.line([(100, 232), (150, 232)], fill=(160, 50, 30), width=4)
-              d.rounded_rectangle([175, 212, 215, 252], radius=6, fill=BLUE)
-              d.line([(195, 212), (195, 192), (210, 185)], fill=CYAN, width=4)
-              f_del += hold(img, count=4)
+          for bite in [0, 4*s, 8*s, 4*s]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=80*s, h=44*s)
+              d.rounded_rectangle([95*s, 210*s, 155*s, 248*s], radius=8*s, fill=(230, 165, 75))
+              d.line([(100*s, 225*s), (150*s, 225*s)], fill=GREEN, width=4*s)
+              d.line([(100*s, 232*s), (150*s, 232*s)], fill=(160, 50, 30), width=4*s)
+              d.rounded_rectangle([175*s, 212*s, 215*s, 252*s], radius=6*s, fill=BLUE)
+              d.line([(195*s, 212*s), (195*s, 192*s), (210*s, 185*s)], fill=CYAN, width=4*s)
+              f_del += hold(render_downsample(hi), count=4)
           save_gif("delicious", f_del, duration=60)
 
           # ==========================================================
           # 17. KISSES
           # ==========================================================
           f_kis = []
-          img_k0 = Image.new("RGB", (W, H), BG)
-          draw_emo_eyes(ImageDraw.Draw(img_k0))
-          f_kis += hold(img_k0, count=6)
-          for hy in [0, 8, 16, 24]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=cy_norm, h=56)
-              d.ellipse([W//2 - 9, 224, W//2 + 9, 240], fill=CYAN)
-              d.ellipse([W//2 - 4, 228, W//2 + 4, 236], fill=BG)
-              d.ellipse([W//2 + 28, 205 - hy, W//2 + 40, 217 - hy], fill=RED)
-              f_kis += hold(img, count=3)
-          f_kis += hold(img_k0, count=5)
+          hi_0 = create_hi_canvas()
+          draw_emo_eyes(ImageDraw.Draw(hi_0))
+          f_kis += hold(render_downsample(hi_0), count=6)
+          for hy in [0, 8*s, 16*s, 24*s]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=cy_norm, h=56*s)
+              d.ellipse([W//2 - 9*s, 224*s, W//2 + 9*s, 240*s], fill=CYAN)
+              d.ellipse([W//2 - 4*s, 228*s, W//2 + 4*s, 236*s], fill=BG)
+              d.ellipse([W//2 + 28*s, 205*s - hy, W//2 + 40*s, 217*s - hy], fill=RED)
+              f_kis += hold(render_downsample(hi), count=3)
+          f_kis += hold(render_downsample(hi_0), count=5)
           save_gif("kisses", f_kis, duration=60)
 
           # ==========================================================
           # 18. CONFIDENT
           # ==========================================================
           f_cnf = []
-          img_conf = Image.new("RGB", (W, H), BG)
-          d_c = ImageDraw.Draw(img_conf)
-          draw_emo_eyes(d_c, y_top=cy_norm + 4, h=54)
-          d_c.arc([W//2 - 18, 228, W//2 + 22, 246], 0, 160, fill=CYAN, width=4)
+          hi = create_hi_canvas()
+          d = ImageDraw.Draw(hi)
+          draw_emo_eyes(d, y_top=cy_norm + 4*s, h=54*s)
+          d.arc([W//2 - 18*s, 228*s, W//2 + 22*s, 246*s], 0, 160, fill=CYAN, width=4*s)
+          img_conf = render_downsample(hi)
           f_cnf += hold(img_conf, count=16)
           for l in [0.4, 0.95, 0.5]:
-              img_b = Image.new("RGB", (W, H), BG)
-              draw_emo_eyes(ImageDraw.Draw(img_b), y_top=cy_norm + 4, h=54, lid=l)
-              f_cnf.append(img_b)
+              hi_b = create_hi_canvas()
+              draw_emo_eyes(ImageDraw.Draw(hi_b), y_top=cy_norm + 4*s, h=54*s, lid=l)
+              f_cnf.append(render_downsample(hi_b))
           f_cnf += hold(img_conf, count=14)
           save_gif("confident", f_cnf, duration=60)
 
           # ==========================================================
-          # 19. SLEEPY (Sleeping Slit Arcs)
+          # 19. SLEEPY
           # ==========================================================
           f_slp = []
-          for y_arc in [135, 140, 145, 140]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
+          for y_arc in [135*s, 140*s, 145*s, 140*s]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
               draw_sleeping_arcs(d, y=y_arc)
-              f_slp += hold(img, count=8)
+              f_slp += hold(render_downsample(hi), count=8)
           save_gif("sleepy", f_slp, duration=70)
 
           # ==========================================================
           # 20. SILLY
           # ==========================================================
           f_sly = []
-          for tx in [0, 3, 0]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_emo_eyes(d, y_top=cy_norm, h=EH, ox=4)
-              d.arc([W//2 - 20, 220, W//2 + 20, 242], 10, 170, fill=CYAN, width=4)
-              d.rounded_rectangle([W//2 + 6 + tx, 232, W//2 + 18 + tx, 252], radius=5, fill=PINK)
-              f_sly += hold(img, count=7)
+          for tx in [0, 3*s, 0]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
+              draw_emo_eyes(d, y_top=cy_norm, h=EH, ox=4*s)
+              d.arc([W//2 - 20*s, 220*s, W//2 + 20*s, 242*s], 10, 170, fill=CYAN, width=4*s)
+              d.rounded_rectangle([W//2 + 6*s + tx, 232*s, W//2 + 18*s + tx, 252*s], radius=5*s, fill=PINK)
+              f_sly += hold(render_downsample(hi), count=7)
           save_gif("silly", f_sly, duration=65)
 
           # ==========================================================
           # 21. CONFUSED
           # ==========================================================
           f_cnf2 = []
-          for hx in [0, -12, -22, -10, 0, 10, 22, 12, 0]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
+          for hx in [0, -12*s, -22*s, -10*s, 0, 10*s, 22*s, 12*s, 0]:
+              hi = create_hi_canvas()
+              d = ImageDraw.Draw(hi)
               draw_emo_eyes(d, ox=hx)
-              d.line([(W//2 - 14 + hx, 235), (W//2 + 14 + hx, 235)], fill=CYAN, width=4)
-              f_cnf2 += hold(img, count=2)
+              d.line([(W//2 - 14*s + hx, 235*s), (W//2 + 14*s + hx, 235*s)], fill=CYAN, width=4*s)
+              f_cnf2 += hold(render_downsample(hi), count=2)
           save_gif("confused", f_cnf2, duration=55)
 
-          print("Generated 100% working EMO animations!")
+          print("Generated 4X Supersampled Studio Crisp EMO Animations!")
           EOF
 
       - name: Commit GIFs To Repository
@@ -435,11 +470,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add gifs/
-          git commit -m "Fix draw_mc_heart missing definition and rebuild assets" || echo "No changes"
+          git commit -m "Apply 4X Lanczos Supersampling and depth highlight glow for studio-grade graphics" || echo "No changes"
           git push
 
       - name: Upload GIFs ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: true-emo-official-gifs
+          name: studio-hd-emo-gifs
           path: gifs/
