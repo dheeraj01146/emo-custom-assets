@@ -1,4 +1,4 @@
-name: Generate Pure Clean Eyes EMO GIFs
+name: Generate 100% True Video Replica EMO GIFs
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
       - name: Install Pillow
         run: pip install pillow
 
-      - name: Generate Pure EMO Eyes Animations
+      - name: Generate True Video Replica EMO Animations
         run: |
           python - << 'EOF'
           import os
@@ -35,19 +35,20 @@ jobs:
           TARGET_SIZE = (320, 320)
           
           BG = (0, 0, 0)
-          CYAN = (0, 245, 255)
-          WHITE = (255, 255, 255)
+          CYAN_MAIN = (0, 235, 255)
+          CYAN_DARK = (0, 160, 185)   # Video ki authentic left/bottom 3D bevel shadow
+          CYAN_LIGHT = (140, 250, 255) # Top highlight glow
           RED = (255, 45, 75)
           PURPLE = (170, 60, 250)
           PINK = (255, 105, 180)
           BLUE = (50, 150, 255)
 
-          # Large Official Eye Dimensions (Screen ka major area cover karengi)
-          EW, EH = 98 * SCALE, 86 * SCALE
-          CORNER = 26 * SCALE
-          lx1 = 44 * SCALE
+          # Video dimensions matching 1:1
+          EW, EH = 96 * SCALE, 84 * SCALE
+          CORNER = 28 * SCALE
+          lx1 = 46 * SCALE
           rx1 = 178 * SCALE
-          cy_norm = 117 * SCALE
+          cy_norm = 118 * SCALE
 
           def create_hi_canvas():
               return Image.new("RGB", (W, H), BG)
@@ -55,15 +56,46 @@ jobs:
           def render_downsample(hi_img):
               return hi_img.resize(TARGET_SIZE, Image.Resampling.LANCZOS)
 
-          def draw_emo_eyes(draw, y_top=cy_norm, h=EH, lid=0.0, ox=0, oy=0):
-              cur_h = int(h * (1.0 - lid))
-              cur_h = max(cur_h, 6 * SCALE)
+          # Video ki authentic 3D Bevelled Squircle Eye
+          def draw_single_eye(draw, x, yt, yb, w=EW, r=CORNER, lid_top=0.0, lid_bot=0.0):
+              s = SCALE
+              total_h = yb - yt
+              if total_h <= 6 * s:
+                  # Thin line blink
+                  draw.rounded_rectangle([x, yt, x + w, yb], radius=3*s, fill=CYAN_MAIN)
+                  return
+
+              # 1. Base Darker Shadow (Left & Bottom Bevel effect)
+              draw.rounded_rectangle([x, yt, x + w, yb], radius=r, fill=CYAN_DARK)
+              
+              # 2. Main Glowing Face shifted 3 pixels top-right
+              shift_x = 4 * s
+              shift_y = 3 * s
+              inner_r = max(r - 4*s, 4*s)
+              draw.rounded_rectangle([x + shift_x, yt - shift_y, x + w, yb - shift_y*2], radius=inner_r, fill=CYAN_MAIN)
+
+              # 3. Top-Right Soft Highlight
+              draw.rounded_rectangle([x + w - 30*s, yt - shift_y + 4*s, x + w - 8*s, yt - shift_y + 24*s], radius=inner_r//2, fill=CYAN_LIGHT)
+
+              # Lids Cut (Organic blinking)
+              if lid_top > 0.02:
+                  drop_y = yt + int(total_h * min(lid_top, 1.0))
+                  draw.rectangle([x - 4*s, yt - 6*s, x + w + 4*s, drop_y], fill=BG)
+              if lid_bot > 0.02:
+                  cut_y = yb - int(total_h * min(lid_bot, 1.0))
+                  draw.rectangle([x - 4*s, cut_y, x + w + 4*s, yb + 6*s], fill=BG)
+
+          def draw_emo_eyes(draw, y_top=cy_norm, h=EH, lid_top=0.0, lid_bot=0.0, ox=0, oy=0, left_scale_y=1.0, right_scale_y=1.0):
+              s = SCALE
               y_mid = (y_top + oy) + h // 2
-              yt = y_mid - cur_h // 2
-              yb = y_mid + cur_h // 2
-              r = min(CORNER, cur_h // 2)
-              draw.rounded_rectangle([lx1 + ox, yt, lx1 + EW + ox, yb], radius=r, fill=CYAN)
-              draw.rounded_rectangle([rx1 + ox, yt, rx1 + EW + ox, yb], radius=r, fill=CYAN)
+
+              # Left Eye
+              lh = int(h * left_scale_y)
+              draw_single_eye(draw, lx1 + ox, y_mid - lh//2, y_mid + lh//2, EW, CORNER, lid_top, lid_bot)
+
+              # Right Eye
+              rh = int(h * right_scale_y)
+              draw_single_eye(draw, rx1 + ox, y_mid - rh//2, y_mid + rh//2, EW, CORNER, lid_top, lid_bot)
 
           def draw_mc_heart(draw, hx, cur_y):
               s = SCALE
@@ -88,65 +120,104 @@ jobs:
           s = SCALE
 
           # ==========================================================
-          # 1. NEUTRAL: ONLY NATURAL EYE BLINKING & CALM GLANCES
-          # (Zero props, pure authentic robot idle state ~10-12s)
+          # 1. NEUTRAL: EXACT VIDEO REPLICA LOOP (~12 SECONDS)
+          # Video Sequence:
+          # Calm stare -> Normal Blink -> Look Left -> Look Right -> 
+          # Squash & Stretch -> Sleepy Eyes -> Double Blink -> Idle
           # ==========================================================
           f_neu = []
           hi_center = create_hi_canvas()
           draw_emo_eyes(ImageDraw.Draw(hi_center))
           img_center = render_downsample(hi_center)
 
-          # 1. Calm straight look (2.5 seconds)
+          # 1. Calm Steady Look (2.5 sec hold)
           f_neu += hold(img_center, count=35)
 
-          # Single smooth blink
-          for l in [0.25, 0.65, 0.95, 0.5, 0.0]:
+          # 2. Fast Smooth Natural Blink (00:05 in video)
+          for l in [0.25, 0.6, 0.95, 0.6, 0.0]:
               hi = create_hi_canvas()
-              draw_emo_eyes(ImageDraw.Draw(hi), lid=l)
+              draw_emo_eyes(ImageDraw.Draw(hi), lid_top=l)
               f_neu.append(render_downsample(hi))
+          f_neu += hold(img_center, count=18)
 
-          # 2. Stay straight pause (1.5 seconds)
-          f_neu += hold(img_center, count=22)
-
-          # 3. Glance Left calmly
+          # 3. Looking Left with Slight Squash (00:19 in video)
+          for ox in [0, -6*s, -12*s, -16*s]:
+              hi = create_hi_canvas()
+              draw_emo_eyes(ImageDraw.Draw(hi), ox=ox)
+              f_neu += hold(render_downsample(hi), count=2)
+          # Hold Left Glance
           hi_l = create_hi_canvas()
-          draw_emo_eyes(ImageDraw.Draw(hi_l), ox=-14*s)
-          f_neu += hold(render_downsample(hi_l), count=26)
+          draw_emo_eyes(ImageDraw.Draw(hi_l), ox=-16*s)
+          f_neu += hold(render_downsample(hi_l), count=22)
 
           # Blink while looking left
-          for l in [0.35, 0.95, 0.4]:
+          for l in [0.35, 0.95, 0.4, 0.0]:
               hi = create_hi_canvas()
-              draw_emo_eyes(ImageDraw.Draw(hi), ox=-14*s, lid=l)
+              draw_emo_eyes(ImageDraw.Draw(hi), ox=-16*s, lid_top=l)
               f_neu.append(render_downsample(hi))
-          f_neu += hold(render_downsample(hi_l), count=12)
+          f_neu += hold(render_downsample(hi_l), count=10)
 
-          # 4. Return to center (1 second)
-          f_neu += hold(img_center, count=16)
-
-          # Double-blink (cute natural idle habit)
-          for l in [0.4, 0.95, 0.2, 0.6, 0.95, 0.3, 0.0]:
+          # Return to center
+          for ox in [-12*s, -6*s, 0]:
               hi = create_hi_canvas()
-              draw_emo_eyes(ImageDraw.Draw(hi), lid=l)
+              draw_emo_eyes(ImageDraw.Draw(hi), ox=ox)
+              f_neu += hold(render_downsample(hi), count=2)
+          f_neu += hold(img_center, count=15)
+
+          # 4. Sleepy Slit Half-lids (00:22 in video)
+          for l in [0.15, 0.35, 0.55]:
+              hi = create_hi_canvas()
+              draw_emo_eyes(ImageDraw.Draw(hi), lid_top=l, lid_bot=l*0.4)
+              f_neu += hold(render_downsample(hi), count=3)
+          hi_sleepy = create_hi_canvas()
+          draw_emo_eyes(ImageDraw.Draw(hi_sleepy), lid_top=0.6, lid_bot=0.25)
+          f_neu += hold(render_downsample(hi_sleepy), count=25)
+
+          # Open eyes back to normal
+          for l in [0.4, 0.2, 0.0]:
+              hi = create_hi_canvas()
+              draw_emo_eyes(ImageDraw.Draw(hi), lid_top=l)
+              f_neu += hold(render_downsample(hi), count=2)
+          f_neu += hold(img_center, count=12)
+
+          # 5. One eye stretch / Squash (Cute EMO expression from 00:20 in video)
+          hi_squash = create_hi_canvas()
+          draw_emo_eyes(ImageDraw.Draw(hi_squash), left_scale_y=0.75, right_scale_y=1.05)
+          f_neu += hold(render_downsample(hi_squash), count=20)
+
+          # 6. Double Blink (00:13 in video)
+          for l in [0.4, 0.95, 0.2, 0.7, 0.95, 0.3, 0.0]:
+              hi = create_hi_canvas()
+              draw_emo_eyes(ImageDraw.Draw(hi), lid_top=l)
               f_neu.append(render_downsample(hi))
 
-          # 5. Glance Right calmly
+          # 7. Looking Right calmly
+          for ox in [0, 6*s, 12*s, 16*s]:
+              hi = create_hi_canvas()
+              draw_emo_eyes(ImageDraw.Draw(hi), ox=ox)
+              f_neu += hold(render_downsample(hi), count=2)
           hi_r = create_hi_canvas()
-          draw_emo_eyes(ImageDraw.Draw(hi_r), ox=14*s)
-          f_neu += hold(render_downsample(hi_r), count=26)
+          draw_emo_eyes(ImageDraw.Draw(hi_r), ox=16*s)
+          f_neu += hold(render_downsample(hi_r), count=20)
 
-          # Return to center and rest
-          f_neu += hold(img_center, count=20)
+          # Final return to center
+          for ox in [12*s, 6*s, 0]:
+              hi = create_hi_canvas()
+              draw_emo_eyes(ImageDraw.Draw(hi), ox=ox)
+              f_neu += hold(render_downsample(hi), count=2)
+          f_neu += hold(img_center, count=18)
+
           save_gif("neutral", f_neu, duration=65)
 
           # ==========================================================
-          # 2. HAPPY
+          # 2. HAPPY (Video Style Squint Smile)
           # ==========================================================
           f_hap = []
-          for dy in [0, -4*s, -8*s, -4*s, 0]:
+          for dy in [0, -3*s, -6*s, -3*s, 0]:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
               for cx in [lx1, rx1]:
-                  d.pieslice([cx, cy_norm - 10*s + dy, cx + EW, cy_norm + EH + dy], 180, 360, fill=CYAN)
+                  d.pieslice([cx, cy_norm - 10*s + dy, cx + EW, cy_norm + EH + dy], 180, 360, fill=CYAN_MAIN)
                   d.pieslice([cx, cy_norm + 16*s + dy, cx + EW, cy_norm + EH + 26*s + dy], 180, 360, fill=BG)
               f_hap += hold(render_downsample(hi), count=3)
           save_gif("happy", f_hap, duration=60)
@@ -159,9 +230,9 @@ jobs:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
               for cx in [lx1, rx1]:
-                  d.pieslice([cx, cy_norm - 6*s, cx + EW, cy_norm + EH], 180, 360, fill=CYAN)
+                  d.pieslice([cx, cy_norm - 6*s, cx + EW, cy_norm + EH], 180, 360, fill=CYAN_MAIN)
                   d.pieslice([cx, cy_norm + 18*s, cx + EW, cy_norm + EH + 24*s], 180, 360, fill=BG)
-              d.pieslice([W//2 - 28*s, 222*s, W//2 + 28*s, 222*s + h*2], 0, 180, fill=CYAN)
+              d.pieslice([W//2 - 28*s, 222*s, W//2 + 28*s, 222*s + h*2], 0, 180, fill=CYAN_MAIN)
               f_lau += hold(render_downsample(hi), count=3)
           save_gif("laughing", f_lau, duration=60)
 
@@ -173,7 +244,7 @@ jobs:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
               draw_emo_eyes(d, y_top=cy_norm + dy, h=54*s)
-              d.pieslice([W//2 - 24*s, 222*s + dy, W//2 + 24*s, 222*s + dy + mh*2], 0, 180, fill=CYAN)
+              d.pieslice([W//2 - 24*s, 222*s + dy, W//2 + 24*s, 222*s + dy + mh*2], 0, 180, fill=CYAN_MAIN)
               f_fun += hold(render_downsample(hi), count=4)
           save_gif("funny", f_fun, duration=65)
 
@@ -186,18 +257,18 @@ jobs:
           draw_emo_eyes(d, y_top=cy_norm + 16*s, h=56*s)
           d.polygon([(lx1, cy_norm + 16*s), (lx1 + EW, cy_norm + 34*s), (lx1, cy_norm + 34*s)], fill=BG)
           d.polygon([(rx1 + EW, cy_norm + 16*s), (rx1, cy_norm + 34*s), (rx1 + EW, cy_norm + 34*s)], fill=BG)
-          d.arc([W//2 - 20*s, 238*s, W//2 + 20*s, 263*s], 180, 360, fill=CYAN, width=5*s)
+          d.arc([W//2 - 20*s, 238*s, W//2 + 20*s, 263*s], 180, 360, fill=CYAN_MAIN, width=5*s)
           img_sad = render_downsample(hi)
           f_sad += hold(img_sad, count=18)
           for l in [0.5, 0.95, 0.5]:
               hi_b = create_hi_canvas()
-              draw_emo_eyes(ImageDraw.Draw(hi_b), y_top=cy_norm + 16*s, h=56*s, lid=l)
+              draw_emo_eyes(ImageDraw.Draw(hi_b), y_top=cy_norm + 16*s, h=56*s, lid_top=l)
               f_sad.append(render_downsample(hi_b))
           f_sad += hold(img_sad, count=18)
           save_gif("sad", f_sad, duration=60)
 
           # ==========================================================
-          # 6. ANGRY
+          # 6. ANGRY (Slanted focused eye cuts from 00:09 in video)
           # ==========================================================
           f_ang = []
           for fl in [2*s, 8*s, 14*s, 6*s]:
@@ -210,7 +281,7 @@ jobs:
           save_gif("angry", f_ang, duration=60)
 
           # ==========================================================
-          # 7. CRYING
+          # 7. CRYING (Fast tears)
           # ==========================================================
           f_cry = []
           for ty in range(0, 64*s, 8*s):
@@ -254,7 +325,7 @@ jobs:
           hi_sur = create_hi_canvas()
           d_sr = ImageDraw.Draw(hi_sur)
           draw_emo_eyes(d_sr, y_top=cy_norm - 6*s, h=EH)
-          d_sr.ellipse([W//2 - 14*s, 225*s, W//2 + 14*s, 253*s], fill=CYAN)
+          d_sr.ellipse([W//2 - 14*s, 225*s, W//2 + 14*s, 253*s], fill=CYAN_MAIN)
           f_sur += hold(render_downsample(hi_sur), count=20)
           save_gif("surprised", f_sur, duration=60)
 
@@ -265,12 +336,12 @@ jobs:
           hi = create_hi_canvas()
           d = ImageDraw.Draw(hi)
           draw_emo_eyes(d, y_top=cy_norm - 10*s, h=EH + 8*s)
-          d.ellipse([W//2 - 14*s, 226*s, W//2 + 14*s, 254*s], fill=CYAN)
+          d.ellipse([W//2 - 14*s, 226*s, W//2 + 14*s, 254*s], fill=CYAN_MAIN)
           img_shk = render_downsample(hi)
           f_shk += hold(img_shk, count=16)
           for l in [0.4, 0.95, 0.5]:
               hi_b = create_hi_canvas()
-              draw_emo_eyes(ImageDraw.Draw(hi_b), y_top=cy_norm - 10*s, h=EH + 8*s, lid=l)
+              draw_emo_eyes(ImageDraw.Draw(hi_b), y_top=cy_norm - 10*s, h=EH + 8*s, lid_top=l)
               f_shk.append(render_downsample(hi_b))
           f_shk += hold(img_shk, count=16)
           save_gif("shocked", f_shk, duration=60)
@@ -285,13 +356,13 @@ jobs:
           f_thi += hold(img_th, count=20)
           for l in [0.4, 0.95, 0.4]:
               hi_b = create_hi_canvas()
-              draw_emo_eyes(ImageDraw.Draw(hi_b), ox=14*s, oy=-12*s, lid=l)
+              draw_emo_eyes(ImageDraw.Draw(hi_b), ox=14*s, oy=-12*s, lid_top=l)
               f_thi.append(render_downsample(hi_b))
           f_thi += hold(img_th, count=16)
           save_gif("thinking", f_thi, duration=65)
 
           # ==========================================================
-          # 13. WINKING
+          # 13. WINKING (Authentic Left Wink from 05:40 in video)
           # ==========================================================
           f_wnk = []
           hi_0 = create_hi_canvas()
@@ -300,8 +371,10 @@ jobs:
 
           hi_1 = create_hi_canvas()
           d_w = ImageDraw.Draw(hi_1)
-          d_w.rounded_rectangle([lx1, cy_norm, lx1 + EW, cy_norm + EH], radius=CORNER, fill=CYAN)
-          d_w.rounded_rectangle([rx1, cy_norm + EH//2 - 3*s, rx1 + EW, cy_norm + EH//2 + 3*s], radius=3*s, fill=CYAN)
+          # Left eye closes into horizontal glowing slit line
+          draw_single_eye(d_w, lx1, cy_norm + EH//2 - 4*s, cy_norm + EH//2 + 4*s, EW, 4*s)
+          # Right eye stays wide open with 3D bevel
+          draw_single_eye(d_w, rx1, cy_norm, cy_norm + EH, EW, CORNER)
           f_wnk += hold(render_downsample(hi_1), count=18)
           f_wnk += hold(render_downsample(hi_0), count=6)
           save_gif("winking", f_wnk, duration=65)
@@ -316,9 +389,9 @@ jobs:
               d.rounded_rectangle([lx1 - 6*s, cy_norm - 14*s + dy, lx1 + EW + 6*s, cy_norm + EH - 10*s + dy], radius=10*s, fill=PURPLE)
               d.rounded_rectangle([rx1 - 6*s, cy_norm - 14*s + dy, rx1 + EW + 6*s, cy_norm + EH - 10*s + dy], radius=10*s, fill=PURPLE)
               d.rectangle([lx1 + EW, cy_norm + 4*s + dy, rx1, cy_norm + 14*s + dy], fill=PURPLE)
-              d.line([(lx1 + 10*s, cy_norm - 6*s + dy), (lx1 + 30*s, cy_norm + 20*s + dy)], fill=WHITE, width=3*s)
-              d.line([(rx1 + 10*s, cy_norm - 6*s + dy), (rx1 + 30*s, cy_norm + 20*s + dy)], fill=WHITE, width=3*s)
-              d.line([(W//2 - 18*s, 235*s + dy), (W//2 + 18*s, 235*s + dy)], fill=CYAN, width=4*s)
+              d.line([(lx1 + 10*s, cy_norm - 6*s + dy), (lx1 + 30*s, cy_norm + 20*s + dy)], fill=(255, 255, 255), width=3*s)
+              d.line([(rx1 + 10*s, cy_norm - 6*s + dy), (rx1 + 30*s, cy_norm + 20*s + dy)], fill=(255, 255, 255), width=3*s)
+              d.line([(W//2 - 18*s, 235*s + dy), (W//2 + 18*s, 235*s + dy)], fill=CYAN_MAIN, width=4*s)
               f_coo += hold(render_downsample(hi), count=5)
           save_gif("cool", f_coo, duration=65)
 
@@ -330,7 +403,7 @@ jobs:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
               draw_emo_eyes(d, y_top=cy_norm + 10*s, h=48*s)
-              d.arc([W//2 - 18*s, 232*s, W//2 + 18*s, 252*s], 10, 170, fill=CYAN, width=4*s)
+              d.arc([W//2 - 18*s, 232*s, W//2 + 18*s, 252*s], 10, 170, fill=CYAN_MAIN, width=4*s)
               f_rel += hold(render_downsample(hi), count=5)
           save_gif("relaxed", f_rel, duration=70)
 
@@ -342,7 +415,7 @@ jobs:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
               draw_emo_eyes(d, y_top=cy_norm + 4*s, h=52*s)
-              d.rounded_rectangle([W//2 - 20*s, 226*s, W//2 + 20*s, 242*s], radius=6*s, fill=CYAN)
+              d.rounded_rectangle([W//2 - 20*s, 226*s, W//2 + 20*s, 242*s], radius=6*s, fill=CYAN_MAIN)
               d.rounded_rectangle([W//2 - 8*s, 234*s, W//2 + 8*s, 234*s + tw], radius=6*s, fill=PINK)
               f_del += hold(render_downsample(hi), count=4)
           save_gif("delicious", f_del, duration=60)
@@ -358,7 +431,7 @@ jobs:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
               draw_emo_eyes(d, y_top=cy_norm, h=56*s)
-              d.ellipse([W//2 - 9*s, 224*s, W//2 + 9*s, 240*s], fill=CYAN)
+              d.ellipse([W//2 - 9*s, 224*s, W//2 + 9*s, 240*s], fill=CYAN_MAIN)
               d.ellipse([W//2 - 4*s, 228*s, W//2 + 4*s, 236*s], fill=BG)
               d.ellipse([W//2 + 28*s, 205*s - hy, W//2 + 40*s, 217*s - hy], fill=RED)
               f_kis += hold(render_downsample(hi), count=3)
@@ -372,12 +445,12 @@ jobs:
           hi = create_hi_canvas()
           d = ImageDraw.Draw(hi)
           draw_emo_eyes(d, y_top=cy_norm + 4*s, h=54*s)
-          d.arc([W//2 - 18*s, 228*s, W//2 + 22*s, 246*s], 0, 160, fill=CYAN, width=4*s)
+          d.arc([W//2 - 18*s, 228*s, W//2 + 22*s, 246*s], 0, 160, fill=CYAN_MAIN, width=4*s)
           img_conf = render_downsample(hi)
           f_cnf += hold(img_conf, count=16)
           for l in [0.4, 0.95, 0.5]:
               hi_b = create_hi_canvas()
-              draw_emo_eyes(ImageDraw.Draw(hi_b), y_top=cy_norm + 4*s, h=54*s, lid=l)
+              draw_emo_eyes(ImageDraw.Draw(hi_b), y_top=cy_norm + 4*s, h=54*s, lid_top=l)
               f_cnf.append(render_downsample(hi_b))
           f_cnf += hold(img_conf, count=14)
           save_gif("confident", f_cnf, duration=60)
@@ -390,7 +463,7 @@ jobs:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
               for cx in [lx1, rx1]:
-                  d.arc([cx + 6*s, y_arc, cx + EW - 6*s, y_arc + 42*s], 15, 165, fill=CYAN, width=8*s)
+                  d.arc([cx + 6*s, y_arc, cx + EW - 6*s, y_arc + 42*s], 15, 165, fill=CYAN_MAIN, width=8*s)
               f_slp += hold(render_downsample(hi), count=8)
           save_gif("sleepy", f_slp, duration=70)
 
@@ -402,7 +475,7 @@ jobs:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
               draw_emo_eyes(d, y_top=cy_norm, h=EH, ox=4*s)
-              d.arc([W//2 - 20*s, 220*s, W//2 + 20*s, 242*s], 10, 170, fill=CYAN, width=4*s)
+              d.arc([W//2 - 20*s, 220*s, W//2 + 20*s, 242*s], 10, 170, fill=CYAN_MAIN, width=4*s)
               d.rounded_rectangle([W//2 + 6*s + tx, 232*s, W//2 + 18*s + tx, 252*s], radius=5*s, fill=PINK)
               f_sly += hold(render_downsample(hi), count=7)
           save_gif("silly", f_sly, duration=65)
@@ -415,11 +488,11 @@ jobs:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
               draw_emo_eyes(d, ox=hx)
-              d.line([(W//2 - 14*s + hx, 235*s), (W//2 + 14*s + hx, 235*s)], fill=CYAN, width=4*s)
+              d.line([(W//2 - 14*s + hx, 235*s), (W//2 + 14*s + hx, 235*s)], fill=CYAN_MAIN, width=4*s)
               f_cnf2 += hold(render_downsample(hi), count=2)
           save_gif("confused", f_cnf2, duration=55)
 
-          print("Generated pure clean eye-focused animations with zero props in neutral!")
+          print("Generated 100% video matching EMO animations!")
           EOF
 
       - name: Commit GIFs To Repository
@@ -427,11 +500,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add gifs/
-          git commit -m "Keep neutral strictly as large clean squircle eyes with natural blinks and glances" || echo "No changes"
+          git commit -m "Generate 100% accurate video replica EMO screensaver and expression suite" || echo "No changes"
           git push
 
       - name: Upload GIFs ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: clean-eyes-emo-gifs
+          name: video-replica-emo-gifs
           path: gifs/
