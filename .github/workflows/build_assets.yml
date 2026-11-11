@@ -1,4 +1,4 @@
-name: Generate Ultra High-End Studio EMO GIFs
+name: Generate Recognizable Character EMO GIFs
 
 on:
   push:
@@ -23,52 +23,45 @@ jobs:
       - name: Install Pillow
         run: pip install pillow
 
-      - name: Generate Anti-Aliased Studio EMO Graphics
+      - name: Generate High Detail EMO Animations
         run: |
           python - << 'EOF'
           import os
           from PIL import Image, ImageDraw
 
           os.makedirs("gifs", exist_ok=True)
-          # 4X Supersampling for perfect anti-aliased studio quality
           SCALE = 4
           W, H = 320 * SCALE, 320 * SCALE
           TARGET_SIZE = (320, 320)
           
           BG = (0, 0, 0)
           CYAN = (0, 245, 255)
-          CYAN_GLOW = (0, 180, 210)
           WHITE = (255, 255, 255)
+          GREY_ARM = (65, 75, 90)
+          HAND_GLOVE = (90, 105, 125)
+          HAND_HIGHLIGHT = (120, 140, 165)
           RED = (255, 45, 75)
           ORANGE = (255, 130, 0)
-          YELLOW = (255, 225, 25)
-          BROWN = (175, 105, 45)
+          YELLOW = (255, 215, 0)
+          BROWN_CUP = (195, 115, 55)
+          COFFEE_DARK = (70, 35, 15)
           GREEN = (50, 220, 80)
           PINK = (255, 105, 180)
           PURPLE = (170, 60, 250)
-          BLUE = (70, 160, 255)
+          BLUE_PAD = (45, 110, 225)
 
-          # High-Res Eyeball Parameters
-          EW, EH = 92 * SCALE, 80 * SCALE
-          CORNER = 26 * SCALE
-          lx1 = 48 * SCALE
+          # Eye dimensions
+          EW, EH = 94 * SCALE, 82 * SCALE
+          CORNER = 24 * SCALE
+          lx1 = 46 * SCALE
           rx1 = 180 * SCALE
-          cy_norm = 105 * SCALE
+          cy_norm = 104 * SCALE
 
           def create_hi_canvas():
               return Image.new("RGB", (W, H), BG)
 
           def render_downsample(hi_img):
               return hi_img.resize(TARGET_SIZE, Image.Resampling.LANCZOS)
-
-          def draw_studio_eye(draw, x, yt, yb, r):
-              # Outer subtle soft border glow
-              draw.rounded_rectangle([x - 2*SCALE, yt - 2*SCALE, x + EW + 2*SCALE, yb + 2*SCALE], radius=r + 2*SCALE, fill=CYAN_GLOW)
-              # Main Vibrant Eye Body
-              draw.rounded_rectangle([x, yt, x + EW, yb], radius=r, fill=CYAN)
-              # Top glass highlight reflection for rich depth
-              hl_h = max(int((yb - yt) * 0.22), 4 * SCALE)
-              draw.rounded_rectangle([x + 6*SCALE, yt + 4*SCALE, x + EW - 6*SCALE, yt + 4*SCALE + hl_h], radius=r//2, fill=(180, 255, 255))
 
           def draw_emo_eyes(draw, y_top=cy_norm, h=EH, lid=0.0, ox=0):
               cur_h = int(h * (1.0 - lid))
@@ -77,12 +70,20 @@ jobs:
               yt = y_mid - cur_h // 2
               yb = y_mid + cur_h // 2
               r = min(CORNER, cur_h // 2)
-              draw_studio_eye(draw, lx1 + ox, yt, yb, r)
-              draw_studio_eye(draw, rx1 + ox, yt, yb, r)
+              # Clean uniform glowing cyan squircles (Official EMO Style)
+              draw.rounded_rectangle([lx1 + ox, yt, lx1 + EW + ox, yb], radius=r, fill=CYAN)
+              draw.rounded_rectangle([rx1 + ox, yt, rx1 + EW + ox, yb], radius=r, fill=CYAN)
 
-          def draw_sleeping_arcs(draw, y=140 * SCALE):
-              for cx in [lx1, rx1]:
-                  draw.arc([cx + 6*SCALE, y, cx + EW - 6*SCALE, y + 42*SCALE], 15, 165, fill=CYAN, width=8*SCALE)
+          def draw_robot_hands(draw, hx1, hy1, hx2, hy2, size=16*SCALE):
+              s = SCALE
+              # Left Arm + Hand GLOVE
+              draw.line([(hx1 - 25*s, H), (hx1, hy1)], fill=GREY_ARM, width=14*s)
+              draw.ellipse([hx1 - size, hy1 - size, hx1 + size, hy1 + size], fill=HAND_GLOVE)
+              draw.ellipse([hx1 - size//2, hy1 - size//2, hx1 + size//2, hy1 + size//2], fill=HAND_HIGHLIGHT)
+              # Right Arm + Hand GLOVE
+              draw.line([(hx2 + 25*s, H), (hx2, hy2)], fill=GREY_ARM, width=14*s)
+              draw.ellipse([hx2 - size, hy2 - size, hx2 + size, hy2 + size], fill=HAND_GLOVE)
+              draw.ellipse([hx2 - size//2, hy2 - size//2, hx2 + size//2, hy2 + size//2], fill=HAND_HIGHLIGHT)
 
           def draw_mc_heart(draw, hx, cur_y):
               s = SCALE
@@ -105,7 +106,7 @@ jobs:
               )
 
           # ==========================================================
-          # 1. NEUTRAL (Anti-Aliased Studio Living Sequence)
+          # 1. NEUTRAL (Detailed Hands & Props Daily Routine)
           # ==========================================================
           f_neu = []
           hi = create_hi_canvas()
@@ -113,58 +114,75 @@ jobs:
           img_idle = render_downsample(hi)
           f_neu += hold(img_idle, count=25)
 
-          # Anti-aliased Blink
+          # Blink
           for l in [0.25, 0.65, 0.95, 0.5, 0.0]:
               hi_b = create_hi_canvas()
               draw_emo_eyes(ImageDraw.Draw(hi_b), lid=l)
               f_neu.append(render_downsample(hi_b))
           f_neu += hold(img_idle, count=15)
 
-          # A: Exercise Dumbbell (Curved rounded weights)
           s = SCALE
-          for dy in [0, -6*s, -14*s, -20*s, -12*s, -4*s]:
+          # 1. GYM DUMBBELL WORKOUT: Proper Plates, Metallic Rod, Hands Gripping
+          for dy in [0, -6*s, -15*s, -22*s, -14*s, -4*s]:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
-              draw_emo_eyes(d, y_top=72*s, h=54*s)
-              # Chrome bar
-              d.rounded_rectangle([118*s, 222*s + dy, 202*s, 230*s + dy], radius=3*s, fill=WHITE)
-              # Golden Plates
-              d.rounded_rectangle([106*s, 202*s + dy, 122*s, 250*s + dy], radius=7*s, fill=YELLOW)
-              d.rounded_rectangle([198*s, 202*s + dy, 214*s, 250*s + dy], radius=7*s, fill=YELLOW)
-              # Cute Robot hand grip
-              d.rounded_rectangle([148*s, 217*s + dy, 172*s, 240*s + dy], radius=6*s, fill=BLUE)
+              # Focus effort eye squint at top
+              draw_emo_eyes(d, y_top=65*s, h=48*s)
+              
+              bar_y = 224*s + dy
+              # Chrome bar with collars
+              d.rounded_rectangle([90*s, bar_y - 3*s, 230*s, bar_y + 3*s], radius=2*s, fill=WHITE)
+              # Large Outer Iron Plates (Red/Black rings)
+              d.rounded_rectangle([92*s, bar_y - 28*s, 108*s, bar_y + 28*s], radius=5*s, fill=(40, 45, 50))
+              d.rounded_rectangle([96*s, bar_y - 24*s, 104*s, bar_y + 24*s], radius=4*s, fill=RED)
+              # Right Plates
+              d.rounded_rectangle([212*s, bar_y - 28*s, 228*s, bar_y + 28*s], radius=5*s, fill=(40, 45, 50))
+              d.rounded_rectangle([216*s, bar_y - 24*s, 224*s, bar_y + 24*s], radius=4*s, fill=RED)
+              
+              # Hands Gripping the Dumbbell Bar directly
+              draw_robot_hands(d, 126*s, bar_y, 194*s, bar_y, size=14*s)
               f_neu += hold(render_downsample(hi), count=4)
 
-          # B: Tea Cup & Toast
+          # 2. MORNING COFFEE MUG: Hands Holding Mug, Steam Curls
           for st in [0, 3*s, 6*s, 3*s]:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
-              draw_emo_eyes(d, y_top=78*s, h=50*s)
-              # Toast bread
-              d.rounded_rectangle([88*s, 214*s, 142*s, 254*s], radius=10*s, fill=(230, 175, 95))
-              d.line([(96*s, 234*s), (134*s, 234*s)], fill=(180, 120, 50), width=3*s)
-              # Ceramic Teal Mug
-              d.rounded_rectangle([164*s, 214*s, 216*s, 256*s], radius=8*s, fill=CYAN)
-              d.arc([204*s, 222*s, 232*s, 248*s], -90, 90, fill=CYAN, width=4*s)
-              # Steam curls
-              d.line([(180*s, 204*s - st), (184*s, 192*s - st)], fill=WHITE, width=2*s)
-              d.line([(200*s, 204*s - st), (204*s, 192*s - st)], fill=WHITE, width=2*s)
+              draw_emo_eyes(d, y_top=72*s, h=46*s)
+              
+              # Mug Body with handle
+              d.arc([188*s, 218*s, 224*s, 248*s], -90, 90, fill=BROWN_CUP, width=6*s)
+              d.rounded_rectangle([130*s, 210*s, 192*s, 258*s], radius=8*s, fill=BROWN_CUP)
+              d.ellipse([136*s, 212*s, 186*s, 222*s], fill=COFFEE_DARK)
+              
+              # Steam Wavy Smoke
+              sy = 200*s - st
+              d.line([(150*s, sy), (154*s, sy - 8*s), (148*s, sy - 16*s)], fill=WHITE, width=3*s)
+              d.line([(172*s, sy), (168*s, sy - 8*s), (174*s, sy - 16*s)], fill=WHITE, width=3*s)
+              
+              # Hands holding both sides of hot mug
+              draw_robot_hands(d, 124*s, 235*s, 198*s, 235*s, size=13*s)
               f_neu += hold(render_downsample(hi), count=6)
 
-          # C: Gaming Controller
-          for pressed in [0, 1, 0, 1]:
+          # 3. HANDHELD GAME CONSOLE: EMO Hands holding gaming pad
+          for btn_step in [0, 1, 0, 1]:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
-              draw_emo_eyes(d, y_top=74*s, h=56*s)
-              # Sleek Gamepad
-              d.rounded_rectangle([112*s, 204*s, 208*s, 258*s], radius=16*s, fill=BLUE)
-              # D-Pad
-              d.rounded_rectangle([126*s, 226*s, 144*s, 236*s], radius=2*s, fill=WHITE)
-              d.rounded_rectangle([131*s, 221*s, 139*s, 241*s], radius=2*s, fill=WHITE)
-              # Buttons
-              b_col = YELLOW if pressed else RED
-              d.ellipse([176*s, 221*s, 188*s, 233*s], fill=b_col)
-              d.ellipse([188*s, 231*s, 200*s, 243*s], fill=GREEN)
+              draw_emo_eyes(d, y_top=68*s, h=50*s)
+              
+              # Gaming Pad Body
+              d.rounded_rectangle([100*s, 204*s, 220*s, 256*s], radius=16*s, fill=BLUE_PAD)
+              # Screen area
+              d.rounded_rectangle([136*s, 212*s, 184*s, 248*s], radius=4*s, fill=(20, 25, 35))
+              # D-Pad Cross (Left side)
+              d.rectangle([112*s, 225*s, 126*s, 233*s], fill=WHITE)
+              d.rectangle([116*s, 221*s, 122*s, 237*s], fill=WHITE)
+              # Action Buttons (Right side)
+              b_col = YELLOW if btn_step else RED
+              d.ellipse([196*s, 220*s, 206*s, 230*s], fill=b_col)
+              d.ellipse([204*s, 230*s, 214*s, 240*s], fill=GREEN)
+              
+              # Hands holding left and right grips of controller
+              draw_robot_hands(d, 96*s, 234*s, 224*s, 234*s, size=15*s)
               f_neu += hold(render_downsample(hi), count=5)
 
           f_neu += hold(img_idle, count=15)
@@ -229,7 +247,7 @@ jobs:
           save_gif("sad", f_sad, duration=60)
 
           # ==========================================================
-          # 6. ANGRY (Boxing Practice)
+          # 6. ANGRY (Boxing Gloves with Detailed Hands)
           # ==========================================================
           f_ang = []
           for gx in [0, 8*s, -6*s, 0]:
@@ -238,21 +256,23 @@ jobs:
               draw_emo_eyes(d, y_top=cy_norm, h=66*s)
               d.polygon([(0, 0), (W // 2, cy_norm + 26*s), (0, cy_norm + 26*s)], fill=BG)
               d.polygon([(W, 0), (W // 2, cy_norm + 26*s), (W, cy_norm + 26*s)], fill=BG)
-              d.rounded_rectangle([lx1 - 12*s + gx, cy_norm + 30*s, lx1 + 28*s + gx, cy_norm + 70*s], radius=10*s, fill=RED)
-              d.rounded_rectangle([rx1 + EW - 28*s - gx, cy_norm + 30*s, rx1 + EW + 12*s - gx, cy_norm + 70*s], radius=10*s, fill=RED)
+              # Boxing arms + big red punching gloves
+              draw_robot_hands(d, lx1 + 10*s + gx, 220*s, rx1 + EW - 10*s - gx, 220*s, size=24*s)
+              d.rounded_rectangle([lx1 - 10*s + gx, 200*s, lx1 + 30*s + gx, 244*s], radius=12*s, fill=RED)
+              d.rounded_rectangle([rx1 + EW - 30*s - gx, 200*s, rx1 + EW + 10*s - gx, 244*s], radius=12*s, fill=RED)
               f_ang += hold(render_downsample(hi), count=3)
           save_gif("angry", f_ang, duration=60)
 
           # ==========================================================
-          # 7. CRYING (Ultra Smooth HD Droplets)
+          # 7. CRYING (Tears Streaming Down)
           # ==========================================================
           f_cry = []
           for ty in range(0, 64*s, 8*s):
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
               draw_emo_eyes(d, y_top=cy_norm + 10*s, h=54*s)
-              d.ellipse([lx1 + 36*s, cy_norm + 60*s + ty, lx1 + 54*s, cy_norm + 82*s + ty], fill=BLUE)
-              d.ellipse([rx1 + 36*s, cy_norm + 60*s + ty, rx1 + 54*s, cy_norm + 82*s + ty], fill=BLUE)
+              d.ellipse([lx1 + 36*s, cy_norm + 60*s + ty, lx1 + 54*s, cy_norm + 82*s + ty], fill=(50, 150, 255))
+              d.ellipse([rx1 + 36*s, cy_norm + 60*s + ty, rx1 + 54*s, cy_norm + 82*s + ty], fill=(50, 150, 255))
               f_cry += hold(render_downsample(hi), count=2)
           save_gif("crying", f_cry, duration=50)
 
@@ -282,16 +302,16 @@ jobs:
           save_gif("embarrassed", f_emb, duration=70)
 
           # ==========================================================
-          # 10. SURPRISED
+          # 10. SURPRISED (Hands covering mouth)
           # ==========================================================
           f_sur = []
-          for py in [260*s, 240*s, 230*s]:
+          for py in [250*s, 235*s, 226*s]:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
               draw_emo_eyes(d, y_top=cy_norm - 6*s, h=EH)
               d.ellipse([W//2 - 14*s, 218*s, W//2 + 14*s, 246*s], fill=CYAN)
-              d.rounded_rectangle([W//2 - 46*s, py, W//2 - 12*s, py + 28*s], radius=12*s, fill=CYAN)
-              d.rounded_rectangle([W//2 + 12*s, py, W//2 + 46*s, py + 28*s], radius=12*s, fill=CYAN)
+              # Robot hands coming to mouth
+              draw_robot_hands(d, W//2 - 22*s, py, W//2 + 22*s, py, size=18*s)
               f_sur += hold(render_downsample(hi), count=4)
           f_sur += hold(f_sur[-1], count=16)
           save_gif("surprised", f_sur, duration=60)
@@ -314,7 +334,7 @@ jobs:
           save_gif("shocked", f_shk, duration=60)
 
           # ==========================================================
-          # 12. THINKING (Smooth Ball Tracking)
+          # 12. THINKING (Ping-pong ball tracking)
           # ==========================================================
           f_thi = []
           ball_spots = [(90*s, -16*s), (160*s, 0), (230*s, 16*s), (160*s, 0)]
@@ -336,7 +356,7 @@ jobs:
 
           hi_1 = create_hi_canvas()
           d_w = ImageDraw.Draw(hi_1)
-          draw_studio_eye(d_w, lx1, cy_norm, cy_norm + EH, CORNER)
+          d_w.rounded_rectangle([lx1, cy_norm, lx1 + EW, cy_norm + EH], radius=CORNER, fill=CYAN)
           d_w.rounded_rectangle([rx1, cy_norm + EH//2 - 3*s, rx1 + EW, cy_norm + EH//2 + 3*s], radius=3*s, fill=CYAN)
           f_wnk += hold(render_downsample(hi_1), count=18)
           f_wnk += hold(render_downsample(hi_0), count=6)
@@ -367,8 +387,8 @@ jobs:
               d = ImageDraw.Draw(hi)
               draw_emo_eyes(d, y_top=cy_norm + 10*s, h=48*s)
               d.ellipse([W//2 - 7*s, 218*s, W//2 + 7*s, 228*s], fill=CYAN)
-              d.rounded_rectangle([W//2 - 18*s, 238*s, W//2 + 18*s, 266*s], radius=6*s, fill=BROWN)
-              d.arc([W//2 + 14*s, 244*s, W//2 + 26*s, 260*s], -90, 90, fill=BROWN, width=3*s)
+              d.rounded_rectangle([W//2 - 18*s, 238*s, W//2 + 18*s, 266*s], radius=6*s, fill=(185, 115, 55))
+              d.arc([W//2 + 14*s, 244*s, W//2 + 26*s, 260*s], -90, 90, fill=(185, 115, 55), width=3*s)
               sy = 232*s - steam*2
               d.line([(W//2 - 6*s, sy), (W//2 - 4*s, sy - 6*s)], fill=WHITE, width=2*s)
               d.line([(W//2 + 6*s, sy), (W//2 + 8*s, sy - 6*s)], fill=WHITE, width=2*s)
@@ -386,7 +406,7 @@ jobs:
               d.rounded_rectangle([95*s, 210*s, 155*s, 248*s], radius=8*s, fill=(230, 165, 75))
               d.line([(100*s, 225*s), (150*s, 225*s)], fill=GREEN, width=4*s)
               d.line([(100*s, 232*s), (150*s, 232*s)], fill=(160, 50, 30), width=4*s)
-              d.rounded_rectangle([175*s, 212*s, 215*s, 252*s], radius=6*s, fill=BLUE)
+              d.rounded_rectangle([175*s, 212*s, 215*s, 252*s], radius=6*s, fill=(45, 110, 225))
               d.line([(195*s, 212*s), (195*s, 192*s), (210*s, 185*s)], fill=CYAN, width=4*s)
               f_del += hold(render_downsample(hi), count=4)
           save_gif("delicious", f_del, duration=60)
@@ -433,7 +453,8 @@ jobs:
           for y_arc in [135*s, 140*s, 145*s, 140*s]:
               hi = create_hi_canvas()
               d = ImageDraw.Draw(hi)
-              draw_sleeping_arcs(d, y=y_arc)
+              for cx in [lx1, rx1]:
+                  d.arc([cx + 6*s, y_arc, cx + EW - 6*s, y_arc + 42*s], 15, 165, fill=CYAN, width=8*s)
               f_slp += hold(render_downsample(hi), count=8)
           save_gif("sleepy", f_slp, duration=70)
 
@@ -452,7 +473,7 @@ jobs:
 
           # ==========================================================
           # 21. CONFUSED
-          # ==========================================================
+          # ==========================================
           f_cnf2 = []
           for hx in [0, -12*s, -22*s, -10*s, 0, 10*s, 22*s, 12*s, 0]:
               hi = create_hi_canvas()
@@ -462,7 +483,7 @@ jobs:
               f_cnf2 += hold(render_downsample(hi), count=2)
           save_gif("confused", f_cnf2, duration=55)
 
-          print("Generated 4X Supersampled Studio Crisp EMO Animations!")
+          print("Generated detailed character animations with real EMO hands & recognizable props!")
           EOF
 
       - name: Commit GIFs To Repository
@@ -470,11 +491,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add gifs/
-          git commit -m "Apply 4X Lanczos Supersampling and depth highlight glow for studio-grade graphics" || echo "No changes"
+          git commit -m "Add physical robot arms/hands gripping dumbbell, cup, and controller" || echo "No changes"
           git push
 
       - name: Upload GIFs ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: studio-hd-emo-gifs
+          name: detailed-hands-emo-gifs
           path: gifs/
