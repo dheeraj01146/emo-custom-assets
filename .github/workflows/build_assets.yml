@@ -23,7 +23,7 @@ jobs:
       - name: Install Pillow
         run: pip install pillow
 
-      - name: Generate Colorful Smooth EMO GIFs
+      - name: Generate Extended Pausing EMO GIFs
         run: |
           python - << 'EOF'
           import os
@@ -69,288 +69,256 @@ jobs:
               draw.rectangle([hx - 10, cur_y + 8, hx + 10, cur_y + 14], fill=RED)
               draw.rectangle([hx - 5, cur_y + 14, hx + 5, cur_y + 18], fill=RED)
 
-          def save_gif(name, frames, duration=280):
+          # Frame delay 350ms, long frame lists give 12 to 18 seconds total playtime
+          def save_gif(name, frames, duration=350):
               frames[0].save(f"gifs/{name}.gif", save_all=True, append_images=frames[1:], duration=duration, loop=0)
 
+          def pause(img, count=10):
+              return [img.copy() for _ in range(count)]
+
+          def base_frame(ox=0, oy=0, lid=0.0, color=CYAN):
+              img = Image.new("RGB", (W, H), BG)
+              d = ImageDraw.Draw(img)
+              draw_eye_with_eyelid(d, lx, cy, ox=ox, oy=oy, lid_pct=lid, eye_color=color)
+              draw_eye_with_eyelid(d, rx, cy, ox=ox, oy=oy, lid_pct=lid, eye_color=color)
+              return img
+
           # ==========================================
-          # 1. NEUTRAL (Living Relaxed Story Loop)
+          # 1. NEUTRAL (15+ Sec Long Living Loop with Deep Pauses)
           # ==========================================
           f_neutral = []
 
-          def add_idle_wait(frames, count=6, ox=0, oy=0):
-              for i in range(count):
-                  lid = 0.0
-                  if i == 3: lid = 0.9
-                  elif i == 4: lid = 0.25
-                  img = Image.new("RGB", (W, H), BG)
-                  d = ImageDraw.Draw(img)
-                  draw_eye_with_eyelid(d, lx, cy, ox=ox, oy=oy, lid_pct=lid)
-                  draw_eye_with_eyelid(d, rx, cy, ox=ox, oy=oy, lid_pct=lid)
-                  frames.append(img)
+          # 1. Shuru mein pura freeze/ruka hua (3.5 second pause)
+          f_neutral += pause(base_frame(), count=10)
 
-          # Calm idle start
-          add_idle_wait(f_neutral, count=7)
+          # 2. Halka sa blink karke wapas pause (2.5 second pause)
+          f_neutral.append(base_frame(lid=0.45))
+          f_neutral.append(base_frame(lid=0.95))
+          f_neutral.append(base_frame(lid=0.3))
+          f_neutral += pause(base_frame(), count=7)
 
-          # Activity: Chai Peena (Warm Brown Mug with Cream Steam)
-          for st in [0, 1, 2, 3, 2, 1]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy, lid_pct=0.2)
-              draw_eye_with_eyelid(d, rx, cy, lid_pct=0.2)
-              d.ellipse([W//2 - 6, 216, W//2 + 6, 226], fill=CYAN)
-              d.rounded_rectangle([W//2 - 18, 234, W//2 + 18, 260], radius=6, fill=BROWN)
-              d.arc([W//2 + 13, 238, W//2 + 25, 254], -90, 90, fill=BROWN, width=3)
-              sy = 228 - st*3
-              d.line([(W//2 - 4, sy), (W//2 - 3, sy - 6)], fill=(240, 240, 240), width=2)
-              d.line([(W//2 + 4, sy), (W//2 + 5, sy - 6)], fill=(240, 240, 240), width=2)
-              f_neutral.append(img)
+          # 3. CHAI PEENA: Cup aata hai, sip hold karke rukta hai (4 second pause with cup)
+          img_tea = Image.new("RGB", (W, H), BG)
+          d_t = ImageDraw.Draw(img_tea)
+          draw_eye_with_eyelid(d_t, lx, cy, lid_pct=0.2)
+          draw_eye_with_eyelid(d_t, rx, cy, lid_pct=0.2)
+          d_t.ellipse([W//2 - 6, 216, W//2 + 6, 226], fill=CYAN)
+          d_t.rounded_rectangle([W//2 - 18, 234, W//2 + 18, 260], radius=6, fill=BROWN)
+          d_t.arc([W//2 + 13, 238, W//2 + 25, 254], -90, 90, fill=BROWN, width=3)
+          d_t.line([(W//2 - 4, 224), (W//2 - 3, 218)], fill=(240, 240, 240), width=2)
+          d_t.line([(W//2 + 4, 224), (W//2 + 5, 218)], fill=(240, 240, 240), width=2)
+          f_neutral += pause(img_tea, count=12)
 
-          # Calm rest
-          add_idle_wait(f_neutral, count=6, ox=10)
+          # 4. Cup hat gaya, side mein dekhte hue ruk gaya (3 second pause)
+          f_neutral += pause(base_frame(ox=12), count=8)
+          f_neutral.append(base_frame(ox=12, lid=0.9))
+          f_neutral += pause(base_frame(ox=12), count=4)
 
-          # Activity: Burger Khana (Golden bun + green lettuce + patty)
-          for by in [242, 230, 236, 228, 238, 245]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy, oy=4, lid_pct=0.1)
-              draw_eye_with_eyelid(d, rx, cy, oy=4, lid_pct=0.1)
-              # Top bun
-              d.rounded_rectangle([W//2 - 22, by, W//2 + 22, by + 8], radius=4, fill=(235, 170, 70))
-              # Lettuce
-              d.line([(W//2 - 20, by + 9), (W//2 + 20, by + 9)], fill=GREEN, width=3)
-              # Patty
-              d.line([(W//2 - 20, by + 12), (W//2 + 20, by + 12)], fill=(150, 50, 30), width=3)
-              # Bottom bun
-              d.rounded_rectangle([W//2 - 22, by + 14, W//2 + 22, by + 19], radius=3, fill=(210, 145, 55))
-              f_neutral.append(img)
+          # 5. BURGER KHANA: Ek bite leta hai aur chabaate hue rukta hai (3.5 second pause)
+          img_burger = Image.new("RGB", (W, H), BG)
+          d_b = ImageDraw.Draw(img_burger)
+          draw_eye_with_eyelid(d_b, lx, cy, oy=4, lid_pct=0.15)
+          draw_eye_with_eyelid(d_b, rx, cy, oy=4, lid_pct=0.15)
+          d_b.rounded_rectangle([W//2 - 22, 232, W//2 + 22, 240], radius=4, fill=(235, 170, 70))
+          d_b.line([(W//2 - 20, 241), (W//2 + 20, 241)], fill=GREEN, width=3)
+          d_b.line([(W//2 - 20, 244), (W//2 + 20, 244)], fill=(150, 50, 30), width=3)
+          d_b.rounded_rectangle([W//2 - 22, 246, W//2 + 22, 251], radius=3, fill=(210, 145, 55))
+          f_neutral += pause(img_burger, count=10)
 
-          # Calm rest
-          add_idle_wait(f_neutral, count=6, ox=-10)
-
-          # Activity: Ball Khelna (Glowing Yellow Ball)
-          ball_path = [
-              (60, 260, -12, 8),
-              (110, 195, -6, 2),
-              (160, 155, 0, -6),
-              (210, 195, 6, 2),
-              (260, 260, 12, 8),
-              (160, 200, 0, 0)
-          ]
-          for bx, by, ex, ey in ball_path:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy, ox=ex, oy=ey)
-              draw_eye_with_eyelid(d, rx, cy, ox=ex, oy=ey)
-              d.ellipse([bx - 12, by - 12, bx + 12, by + 12], fill=YELLOW)
-              f_neutral.append(img)
-
-          # Calm rest
-          add_idle_wait(f_neutral, count=6)
-
-          # Activity: Sweater Bunna (Purple yarn ball + yellow needles)
-          for kx in [-8, 8, -8, 8, -6, 6]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy, oy=4, lid_pct=0.18)
-              draw_eye_with_eyelid(d, rx, cy, oy=4, lid_pct=0.18)
-              d.ellipse([W//2 - 16, 228, W//2 + 16, 260], fill=PURPLE)
-              d.line([(W//2 - 26 + kx, 220), (W//2 + 8, 258)], fill=YELLOW, width=3)
-              d.line([(W//2 + 26 - kx, 220), (W//2 - 8, 258)], fill=YELLOW, width=3)
-              f_neutral.append(img)
-
-          save_gif("neutral", f_neutral, duration=260)
+          # 6. Wapas normal aakhein karke aaram se khada (3 second pause)
+          f_neutral += pause(base_frame(), count=8)
+          save_gif("neutral", f_neutral)
 
           # ==========================================
-          # 2. HAPPY
+          # 2. HAPPY (12 Seconds: Long Smiles with Pauses)
           # ==========================================
           f_happy = []
-          for dy in [0, -3, -6, -2]:
+          for dy in [0, -5, 0]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               for cx in [lx, rx]:
                   d.pieslice([cx - R, cy - R + dy, cx + R, cy + R + dy], 180, 360, fill=CYAN)
                   d.pieslice([cx - R, cy - R + 14 + dy, cx + R, cy + R + 14 + dy], 180, 360, fill=BG)
               d.rounded_rectangle([W//2 - 20, 230 + dy, W//2 + 20, 244 + dy], radius=7, fill=CYAN)
-              f_happy.append(img)
-          save_gif("happy", f_happy, 240)
+              f_happy += pause(img, count=11)
+          save_gif("happy", f_happy)
 
           # ==========================================
-          # 3. LAUGHING
+          # 3. LAUGHING (12 Seconds)
           # ==========================================
           f_laugh = []
-          for h in [14, 24, 32, 22]:
+          for h in [18, 30, 20]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               for cx in [lx, rx]:
                   d.pieslice([cx - R, cy - R - 6, cx + R, cy + R - 6], 180, 360, fill=CYAN)
                   d.pieslice([cx - R, cy - R + 12, cx + R, cy + R + 12], 180, 360, fill=BG)
               d.pieslice([W//2 - 26, 216, W//2 + 26, 216 + h*2], 0, 180, fill=CYAN)
-              f_laugh.append(img)
-          save_gif("laughing", f_laugh, 220)
+              f_laugh += pause(img, count=11)
+          save_gif("laughing", f_laugh)
 
           # ==========================================
-          # 4. FUNNY
+          # 4. FUNNY (12 Seconds)
           # ==========================================
           f_funny = []
-          for dy, mh in [(0, 14), (-4, 24), (-2, 28), (0, 18)]:
+          for dy, mh in [(0, 16), (-4, 26), (0, 18)]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               draw_eye_with_eyelid(d, lx, cy + dy, lid_pct=0.25)
               draw_eye_with_eyelid(d, rx, cy + dy, lid_pct=0.25)
               d.pieslice([W//2 - 24, 220 + dy, W//2 + 24, 220 + dy + mh*2], 0, 180, fill=CYAN)
-              f_funny.append(img)
-          save_gif("funny", f_funny, 240)
+              f_funny += pause(img, count=11)
+          save_gif("funny", f_funny)
 
           # ==========================================
-          # 5. SAD
+          # 5. SAD (14 Seconds with Long Gaze Pause)
           # ==========================================
           f_sad = []
-          for lid in [0.4, 0.4, 0.7, 1.0, 0.6, 0.4]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy + 10, oy=10, lid_pct=lid, eye_color=(120, 180, 255))
-              draw_eye_with_eyelid(d, rx, cy + 10, oy=10, lid_pct=lid, eye_color=(120, 180, 255))
-              d.arc([W//2 - 16, 235, W//2 + 16, 255], 180, 360, fill=CYAN, width=4)
-              f_sad.append(img)
-          save_gif("sad", f_sad, 260)
+          img_sad = Image.new("RGB", (W, H), BG)
+          d_s = ImageDraw.Draw(img_sad)
+          draw_eye_with_eyelid(d_s, lx, cy + 10, oy=10, lid_pct=0.4, eye_color=(120, 180, 255))
+          draw_eye_with_eyelid(d_s, rx, cy + 10, oy=10, lid_pct=0.4, eye_color=(120, 180, 255))
+          d_s.arc([W//2 - 16, 235, W//2 + 16, 255], 180, 360, fill=CYAN, width=4)
+          # 6 second continuous sad freeze
+          f_sad += pause(img_sad, count=18)
+          # Slow blink
+          f_sad.append(base_frame(oy=10, lid=0.7, color=(120, 180, 255)))
+          f_sad.append(base_frame(oy=10, lid=0.95, color=(120, 180, 255)))
+          f_sad.append(base_frame(oy=10, lid=0.5, color=(120, 180, 255)))
+          # Another 6 second freeze
+          f_sad += pause(img_sad, count=18)
+          save_gif("sad", f_sad)
 
           # ==========================================
-          # 6. ANGRY (Fiery Red Eyes + Orange/Yellow Flames)
+          # 6. ANGRY (12 Seconds with Flames Pausing)
           # ==========================================
           f_angry = []
-          for fl in [0, 8, 14, 6]:
+          for fl in [2, 10, 16, 8]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               draw_eye_with_eyelid(d, lx, cy, oy=4, eye_color=RED)
               draw_eye_with_eyelid(d, rx, cy, oy=4, eye_color=RED)
               d.polygon([(0, 0), (W // 2, cy - 8), (0, cy - 8)], fill=BG)
               d.polygon([(W, 0), (W // 2, cy - 8), (W, cy - 8)], fill=BG)
-              # Left Fire Flame
               d.polygon([(45, cy + 5), (15, cy - 20 - fl), (30, cy - 8), (10, cy - 38 - fl), (38, cy + 18)], fill=ORANGE)
               d.polygon([(42, cy), (22, cy - 16 - fl), (32, cy - 6), (20, cy - 30 - fl), (36, cy + 12)], fill=YELLOW)
-              # Right Fire Flame
               d.polygon([(275, cy + 5), (305, cy - 20 - fl), (290, cy - 8), (310, cy - 38 - fl), (282, cy + 18)], fill=ORANGE)
               d.polygon([(278, cy), (298, cy - 16 - fl), (288, cy - 6), (300, cy - 30 - fl), (284, cy + 12)], fill=YELLOW)
-              f_angry.append(img)
-          save_gif("angry", f_angry, 220)
+              f_angry += pause(img, count=9)
+          save_gif("angry", f_angry)
 
           # ==========================================
-          # 7. CRYING (Tears in Cyan Water Blue)
+          # 7. CRYING (12 Seconds)
           # ==========================================
           f_crying = []
-          for ty in [5, 20, 38, 56]:
+          for ty in [10, 28, 48]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               draw_eye_with_eyelid(d, lx, cy + 10, oy=8, lid_pct=0.35, eye_color=(120, 200, 255))
               draw_eye_with_eyelid(d, rx, cy + 10, oy=8, lid_pct=0.35, eye_color=(120, 200, 255))
               d.ellipse([lx - 6, cy + 35 + ty, lx + 6, cy + 50 + ty], fill=SKY)
               d.ellipse([rx - 6, cy + 35 + ty, rx + 6, cy + 50 + ty], fill=SKY)
-              f_crying.append(img)
-          save_gif("crying", f_crying, 220)
+              f_crying += pause(img, count=11)
+          save_gif("crying", f_crying)
 
           # ==========================================
-          # 8. LOVING (Red Minecraft Hearts from sides)
+          # 8. LOVING (12 Seconds)
           # ==========================================
           f_loving = []
-          for i, hy in enumerate([0, 10, 22, 34, 46]):
+          for hy in [5, 20, 40]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               draw_eye_with_eyelid(d, lx, cy)
               draw_eye_with_eyelid(d, rx, cy)
               draw_mc_heart(d, lx - R - 12, cy - 10 - hy)
-              if i >= 1:
-                  draw_mc_heart(d, rx + R + 12, cy + 5 - (hy - 10))
-              f_loving.append(img)
-          save_gif("loving", f_loving, 240)
+              draw_mc_heart(d, rx + R + 12, cy + 5 - (hy - 10))
+              f_loving += pause(img, count=11)
+          save_gif("loving", f_loving)
 
           # ==========================================
-          # 9. EMBARRASSED (Peach Pink Blush)
+          # 9. EMBARRASSED (12 Seconds Pause)
           # ==========================================
           f_embarrassed = []
-          for lid in [0.25, 0.3, 0.25]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy + 6, oy=6, lid_pct=lid)
-              draw_eye_with_eyelid(d, rx, cy + 6, oy=6, lid_pct=lid)
-              d.ellipse([lx - 25, cy + 45, lx + 25, cy + 55], fill=BLUSH)
-              d.ellipse([rx - 25, cy + 45, rx + 25, cy + 55], fill=BLUSH)
-              f_embarrassed.append(img)
-          save_gif("embarrassed", f_embarrassed, 260)
+          img_emb = Image.new("RGB", (W, H), BG)
+          d_e = ImageDraw.Draw(img_emb)
+          draw_eye_with_eyelid(d_e, lx, cy + 6, oy=6, lid_pct=0.28)
+          draw_eye_with_eyelid(d_e, rx, cy + 6, oy=6, lid_pct=0.28)
+          d_e.ellipse([lx - 25, cy + 45, lx + 25, cy + 55], fill=BLUSH)
+          d_e.ellipse([rx - 25, cy + 45, rx + 25, cy + 55], fill=BLUSH)
+          f_embarrassed += pause(img_emb, count=34)
+          save_gif("embarrassed", f_embarrassed)
 
           # ==========================================
-          # 10. SURPRISED
+          # 10. SURPRISED (12 Seconds: Paws on Mouth Freeze)
           # ==========================================
           f_surprised = []
-          for py in [260, 240, 230, 232]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy - 4)
-              draw_eye_with_eyelid(d, rx, cy - 4)
-              d.ellipse([W//2 - 12, 218, W//2 + 12, 244], fill=CYAN)
-              d.rounded_rectangle([W//2 - 42, py, W//2 - 10, py + 26], radius=12, fill=CYAN)
-              d.rounded_rectangle([W//2 + 10, py, W//2 + 42, py + 26], radius=12, fill=CYAN)
-              f_surprised.append(img)
-          save_gif("surprised", f_surprised, 240)
+          img_surp = Image.new("RGB", (W, H), BG)
+          d_sh = ImageDraw.Draw(img_surp)
+          draw_eye_with_eyelid(d_sh, lx, cy - 4)
+          draw_eye_with_eyelid(d_sh, rx, cy - 4)
+          d_sh.ellipse([W//2 - 12, 218, W//2 + 12, 244], fill=CYAN)
+          d_sh.rounded_rectangle([W//2 - 42, 230, W//2 - 10, 256], radius=12, fill=CYAN)
+          d_sh.rounded_rectangle([W//2 + 10, 230, W//2 + 42, 256], radius=12, fill=CYAN)
+          f_surprised += pause(img_surp, count=34)
+          save_gif("surprised", f_surprised)
 
           # ==========================================
-          # 11. SHOCKED
+          # 11. SHOCKED (12 Seconds)
           # ==========================================
           f_shocked = []
-          for lid in [0.0, 0.0, 0.4, 0.95, 0.3, 0.0, 0.0]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy - 8, lid_pct=lid)
-              draw_eye_with_eyelid(d, rx, cy - 8, lid_pct=lid)
-              d.ellipse([W//2 - 12, 228, W//2 + 12, 252], fill=CYAN)
-              f_shocked.append(img)
-          save_gif("shocked", f_shocked, 220)
+          img_shk = Image.new("RGB", (W, H), BG)
+          d_k = ImageDraw.Draw(img_shk)
+          draw_eye_with_eyelid(d_k, lx, cy - 8)
+          draw_eye_with_eyelid(d_k, rx, cy - 8)
+          d_k.ellipse([W//2 - 12, 228, W//2 + 12, 252], fill=CYAN)
+          f_shocked += pause(img_shk, count=16)
+          f_shocked.append(base_frame(oy=-8, lid=0.95))
+          f_shocked += pause(img_shk, count=16)
+          save_gif("shocked", f_shocked)
 
           # ==========================================
-          # 12. THINKING
+          # 12. THINKING (12 Seconds)
           # ==========================================
           f_thinking = []
-          for lid in [0.0, 0.0, 0.45, 0.95, 0.4, 0.0]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx + 14, cy - 14, ox=6, oy=-6, lid_pct=lid)
-              draw_eye_with_eyelid(d, rx + 14, cy - 14, ox=6, oy=-6, lid_pct=lid)
-              f_thinking.append(img)
-          save_gif("thinking", f_thinking, 250)
+          f_thinking += pause(base_frame(ox=14, oy=-14), count=16)
+          f_thinking.append(base_frame(ox=14, oy=-14, lid=0.95))
+          f_thinking += pause(base_frame(ox=14, oy=-14), count=16)
+          save_gif("thinking", f_thinking)
 
           # ==========================================
-          # 13. WINKING
+          # 13. WINKING (12 Seconds with Long Hold)
           # ==========================================
           f_wink = []
-          for lid in [0.0, 0.35, 0.8, 1.0, 1.0, 0.5, 0.0]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy, lid_pct=0.0)
-              draw_eye_with_eyelid(d, rx, cy, lid_pct=lid)
-              f_wink.append(img)
-          save_gif("winking", f_wink, 200)
+          f_wink += pause(base_frame(), count=10)
+          img_w = Image.new("RGB", (W, H), BG)
+          d_w = ImageDraw.Draw(img_w)
+          draw_eye_with_eyelid(d_w, lx, cy, lid_pct=0.0)
+          draw_eye_with_eyelid(d_w, rx, cy, lid_pct=0.95)
+          f_wink += pause(img_w, count=20)
+          f_wink += pause(base_frame(), count=4)
+          save_gif("winking", f_wink)
 
           # ==========================================
-          # 14. COOL (Neon Purple Shades)
+          # 14. COOL (12 Seconds)
           # ==========================================
           f_cool = []
-          for dy in [0, -2, 0]:
+          for dy in [0, -3, 0]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               d.rounded_rectangle([lx - R - 4, cy - 24 + dy, lx + R + 4, cy + 24 + dy], radius=8, fill=PURPLE)
               d.rounded_rectangle([rx - R - 4, cy - 24 + dy, rx + R + 4, cy + 24 + dy], radius=8, fill=PURPLE)
               d.rectangle([lx + R, cy - 12 + dy, rx - R, cy - 4 + dy], fill=PURPLE)
-              # White gloss streak
               d.line([(lx - R + 6, cy - 16 + dy), (lx - R + 22, cy + 16 + dy)], fill=(255, 255, 255), width=2)
               d.line([(rx - R + 6, cy - 16 + dy), (rx - R + 22, cy + 16 + dy)], fill=(255, 255, 255), width=2)
               d.line([(W//2 - 16, 235 + dy), (W//2 + 16, 235 + dy)], fill=CYAN, width=4)
-              f_cool.append(img)
-          save_gif("cool", f_cool, 260)
+              f_cool += pause(img, count=11)
+          save_gif("cool", f_cool)
 
           # ==========================================
-          # 15. RELAXED (Coffee Brown Mug)
+          # 15. RELAXED (12 Seconds)
           # ==========================================
           f_relaxed = []
-          for steam in [0, 1, 2, 3]:
+          for steam in [0, 2, 4]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               for cx in [lx, rx]:
@@ -362,14 +330,14 @@ jobs:
               sy = 232 - steam*2
               d.line([(W//2 - 6, sy), (W//2 - 4, sy - 6)], fill=(240, 240, 240), width=2)
               d.line([(W//2 + 6, sy), (W//2 + 8, sy - 6)], fill=(240, 240, 240), width=2)
-              f_relaxed.append(img)
-          save_gif("relaxed", f_relaxed, 260)
+              f_relaxed += pause(img, count=11)
+          save_gif("relaxed", f_relaxed)
 
           # ==========================================
-          # 16. DELICIOUS (Candy Pink Tongue)
+          # 16. DELICIOUS (12 Seconds)
           # ==========================================
           f_delicious = []
-          for tw in [8, 16, 24, 28, 18]:
+          for tw in [10, 24, 16]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               for cx in [lx, rx]:
@@ -377,81 +345,83 @@ jobs:
                   d.pieslice([cx - R, cy - R + 14, cx + R, cy + R + 14], 180, 360, fill=BG)
               d.rounded_rectangle([W//2 - 24, 222, W//2 + 24, 240], radius=8, fill=CYAN)
               d.rounded_rectangle([W//2 - 9, 232, W//2 + 9, 232 + tw], radius=8, fill=PINK)
-              f_delicious.append(img)
-          save_gif("delicious", f_delicious, 220)
+              f_delicious += pause(img, count=11)
+          save_gif("delicious", f_delicious)
 
           # ==========================================
-          # 17. KISSES (Red Heart Pop)
+          # 17. KISSES (12 Seconds with Kiss Freeze)
           # ==========================================
           f_kisses = []
-          for lid, hy in [(0.1, 0), (0.35, -6), (0.4, -14), (0.2, -4)]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy, lid_pct=lid)
-              draw_eye_with_eyelid(d, rx, cy, lid_pct=lid)
-              d.ellipse([W//2 - 9, 224, W//2 + 9, 240], fill=CYAN)
-              d.ellipse([W//2 - 4, 228, W//2 + 4, 236], fill=BG)
-              if hy < 0:
-                  d.ellipse([W//2 + 28, 205 + hy, W//2 + 40, 217 + hy], fill=RED)
-              f_kisses.append(img)
-          save_gif("kisses", f_kisses, 240)
+          f_kisses += pause(base_frame(), count=10)
+          img_k = Image.new("RGB", (W, H), BG)
+          d_ks = ImageDraw.Draw(img_k)
+          draw_eye_with_eyelid(d_ks, lx, cy, lid_pct=0.3)
+          draw_eye_with_eyelid(d_ks, rx, cy, lid_pct=0.3)
+          d_ks.ellipse([W//2 - 9, 224, W//2 + 9, 240], fill=CYAN)
+          d_ks.ellipse([W//2 - 4, 228, W//2 + 4, 236], fill=BG)
+          d_ks.ellipse([W//2 + 28, 195, W//2 + 40, 207], fill=RED)
+          f_kisses += pause(img_k, count=20)
+          f_kisses += pause(base_frame(), count=4)
+          save_gif("kisses", f_kisses)
 
           # ==========================================
-          # 18. CONFIDENT
+          # 18. CONFIDENT (12 Seconds)
           # ==========================================
           f_confident = []
-          for lid in [0.25, 0.25, 0.6, 0.95, 0.5, 0.25]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy, lid_pct=lid)
-              draw_eye_with_eyelid(d, rx, cy, lid_pct=lid)
-              d.arc([W//2 - 16, 228, W//2 + 20, 244], 0, 160, fill=CYAN, width=4)
-              f_confident.append(img)
-          save_gif("confident", f_confident, 250)
+          img_conf = Image.new("RGB", (W, H), BG)
+          d_c = ImageDraw.Draw(img_conf)
+          draw_eye_with_eyelid(d_c, lx, cy, lid_pct=0.25)
+          draw_eye_with_eyelid(d_c, rx, cy, lid_pct=0.25)
+          d_c.arc([W//2 - 16, 228, W//2 + 20, 244], 0, 160, fill=CYAN, width=4)
+          f_confident += pause(img_conf, count=16)
+          f_confident.append(base_frame(lid=0.95))
+          f_confident += pause(img_conf, count=16)
+          save_gif("confident", f_confident)
 
           # ==========================================
-          # 19. SLEEPY (Sky Blue Zzz)
+          # 19. SLEEPY (12 Seconds with Sleeping Zzz Pause)
           # ==========================================
           f_sleepy = []
-          for lid, zy in [(0.0, 0), (0.35, 0), (0.7, 0), (1.0, 4), (1.0, 12), (1.0, 20)]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy + 8, lid_pct=lid)
-              draw_eye_with_eyelid(d, rx, cy + 8, lid_pct=lid)
-              if lid >= 0.95:
-                  d.text((rx + 20, cy - 20 - zy), "z", fill=SKY)
-                  d.text((rx + 30, cy - 35 - zy), "Z", fill=SKY)
-              f_sleepy.append(img)
-          save_gif("sleepy", f_sleepy, 260)
+          # Gradual slow closing
+          f_sleepy += pause(base_frame(oy=8, lid=0.3), count=4)
+          f_sleepy += pause(base_frame(oy=8, lid=0.7), count=4)
+          # Full sleep freeze with Zzz
+          img_slp = Image.new("RGB", (W, H), BG)
+          d_sl = ImageDraw.Draw(img_slp)
+          draw_eye_with_eyelid(d_sl, lx, cy + 8, lid_pct=0.95)
+          draw_eye_with_eyelid(d_sl, rx, cy + 8, lid_pct=0.95)
+          d_sl.text((rx + 20, cy - 25), "z", fill=SKY)
+          d_sl.text((rx + 30, cy - 42), "Z", fill=SKY)
+          f_sleepy += pause(img_slp, count=26)
+          save_gif("sleepy", f_sleepy)
 
           # ==========================================
-          # 20. SILLY (Cheeky Pink Tongue)
+          # 20. SILLY (12 Seconds)
           # ==========================================
           f_silly = []
-          for r_diff, ty in [(-4, 8), (4, 16), (-4, 22), (0, 12)]:
-              img = Image.new("RGB", (W, H), BG)
-              d = ImageDraw.Draw(img)
-              draw_eye_with_eyelid(d, lx, cy, r=R + r_diff, ox=4)
-              draw_eye_with_eyelid(d, rx, cy, r=R - r_diff, ox=-4)
-              d.arc([W//2 - 20, 220, W//2 + 20, 242], 10, 170, fill=CYAN, width=4)
-              d.rounded_rectangle([W//2 + 6, 232, W//2 + 18, 232 + ty], radius=5, fill=PINK)
-              f_silly.append(img)
-          save_gif("silly", f_silly, 220)
+          img_sil = Image.new("RGB", (W, H), BG)
+          d_sly = ImageDraw.Draw(img_sil)
+          draw_eye_with_eyelid(d_sly, lx, cy, ox=4)
+          draw_eye_with_eyelid(d_sly, rx, cy, ox=-4)
+          d_sly.arc([W//2 - 20, 220, W//2 + 20, 242], 10, 170, fill=CYAN, width=4)
+          d_sly.rounded_rectangle([W//2 + 6, 232, W//2 + 18, 252], radius=5, fill=PINK)
+          f_silly += pause(img_sil, count=34)
+          save_gif("silly", f_silly)
 
           # ==========================================
-          # 21. CONFUSED
+          # 21. CONFUSED (12 Seconds with Pauses)
           # ==========================================
           f_confused = []
-          for hx in [0, -18, -24, 0, 18, 24, 0]:
+          for hx in [0, -22, 0, 22, 0]:
               img = Image.new("RGB", (W, H), BG)
               d = ImageDraw.Draw(img)
               draw_eye_with_eyelid(d, lx + hx, cy, ox=-hx//3)
               draw_eye_with_eyelid(d, rx + hx, cy, ox=-hx//3)
               d.line([(W//2 - 14 + hx, 235), (W//2 + 14 + hx, 235)], fill=CYAN, width=4)
-              f_confused.append(img)
-          save_gif("confused", f_confused, 200)
+              f_confused += pause(img, count=7)
+          save_gif("confused", f_confused)
 
-          print("Generated fully colorful and smoothly timed 21 EMO GIFs!")
+          print("Generated 12-16 second long EMO animations with natural static pauses!")
           EOF
 
       - name: Commit GIFs To Repository
@@ -459,11 +429,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add gifs/
-          git commit -m "Upgrade EMO GIFs to full vibrant colors and smooth relaxed timing" || echo "No changes"
+          git commit -m "Extend animations to 12-16 seconds with deep natural static pauses" || echo "No changes"
           git push
 
       - name: Upload GIFs ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: colorful-smooth-emo-gifs
+          name: slow-15s-emo-gifs
           path: gifs/
